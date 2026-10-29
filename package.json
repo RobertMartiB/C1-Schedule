@@ -1,0 +1,46 @@
+{
+  "name": "c1-tracker",
+  "productName": "C1 Tracker",
+  "version": "1.0.0",
+  "description": "Tu plan de estudio para el Cambridge C1 Advanced, con calendario, materiales y Jellyfin.",
+  "author": "Robert Martí",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "vendor": "cp node_modules/hls.js/dist/hls.min.js src/vendor/",
+    "dist:linux": "npm run vendor && electron-builder --linux AppImage deb",
+    "dist:win": "npm run vendor && electron-builder --win zip"
+  },
+  "build": {
+    "appId": "dev.robert.c1tracker",
+    "productName": "C1 Tracker",
+    "files": [
+      "main.js",
+      "src/**/*"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "artifactName": "C1-Tracker-${version}-${os}-${arch}.${ext}",
+    "linux": {
+      "category": "Education",
+      "icon": "build/icon.png",
+      "maintainer": "Robert Martí <martibadiarobert@gmail.com>",
+      "synopsis": "Plan de estudio C1 Advanced",
+      "syncDesktopName": true
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "signAndEditExecutable": false
+    }
+  },
+  "devDependencies": {
+    "electron": "^45.1.0",
+    "electron-builder": "^26.18.0",
+    "hls.js": "^1.7.4"
+  },
+  "homepage": "https://github.com/RobertMartiB/c1-tracker",
+  "desktopName": "c1-tracker.desktop"
+}

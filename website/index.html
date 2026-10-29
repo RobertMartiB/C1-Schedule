@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>C1 Tracker</title>
+  <meta name="description" content="Tu plan de estudio para el Cambridge C1 Advanced: tareas de cada día, calendario, libros de la biblioteca y series y películas en inglés desde tu Jellyfin. Gratis para Linux y Windows.">
+  <meta property="og:title" content="C1 Tracker · Aprueba el C1 Advanced desde casa">
+  <meta property="og:description" content="Abre la app cada día y sabrás exactamente qué estudiar. Gratis para Linux y Windows.">
+  <meta property="og:image" content="img/hoy.jpg">
+  <meta name="theme-color" content="#0b0d14">
+  <link rel="icon" href="icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0d14; --bg2: #10131c; --card: #141824; --line: #232838; --line2: #2e3448;
+      --text: #f1f3f9; --muted: #9aa1b8; --dim: #6c7390;
+      --accent: #5b7cff; --accent2: #8f6bff; --ok: #22c38a; --warn: #f0a92a;
+      --radius: 18px; --max: 1160px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.65 Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    a { color: inherit; }
+    img { max-width: 100%; display: block; }
+    .wrap { max-width: var(--max); margin: 0 auto; padding: 0 20px; }
+    .grad { background: linear-gradient(100deg, #7d97ff, #b48cff 60%, #ff8fc7); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+    /* NAV */
+    .nav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(14px) saturate(160%); -webkit-backdrop-filter: blur(14px) saturate(160%);
+      background: color-mix(in srgb, var(--bg) 72%, transparent); border-bottom: 1px solid transparent; transition: border-color .2s; }
+    .nav.scrolled { border-bottom-color: var(--line); }
+    .nav .wrap { display: flex; align-items: center; gap: 28px; height: 66px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; text-decoration: none; letter-spacing: -.01em; }
+    .brand img { width: 30px; height: 30px; }
+    .nav nav { display: flex; gap: 26px; margin-left: auto; font-size: .93rem; font-weight: 500; }
+    .nav nav a { color: var(--muted); text-decoration: none; transition: color .15s; }
+    .nav nav a:hover { color: var(--text); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 13px 22px; border-radius: 12px; font-weight: 700;
+      text-decoration: none; border: 1px solid transparent; transition: transform .15s, box-shadow .2s, background .2s; white-space: nowrap; font-size: .98rem; }
+    .btn svg { width: 19px; height: 19px; flex: none; }
+    .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; box-shadow: 0 8px 30px -6px rgba(91,124,255,.6), inset 0 1px 0 rgba(255,255,255,.2); }
+    .btn.primary:hover { transform: translateY(-2px); box-shadow: 0 14px 40px -6px rgba(91,124,255,.75), inset 0 1px 0 rgba(255,255,255,.2); }
+    .btn.ghost { border-color: var(--line2); color: var(--text); background: rgba(255,255,255,.02); }
+    .btn.ghost:hover { background: rgba(255,255,255,.06); }
+    .btn.sm { padding: 8px 15px; font-size: .88rem; border-radius: 10px; }
+    @media (max-width: 760px) { .nav nav { display: none; } .nav .btn.sm { margin-left: auto; } }
+
+    /* HERO */
+    .hero { position: relative; padding: 80px 0 40px; }
+    .hero::before { content: ""; position: absolute; inset: -200px 0 auto; height: 900px; z-index: -1; pointer-events: none;
+      background: radial-gradient(600px 400px at 70% 30%, rgba(143,107,255,.22), transparent 70%), radial-gradient(500px 380px at 20% 10%, rgba(91,124,255,.22), transparent 70%); }
+    .hero::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .5;
+      background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 56px 56px;
+      mask-image: radial-gradient(ellipse 70% 60% at 50% 20%, #000 20%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 20%, #000 20%, transparent 75%); }
+    .hero-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 56px; align-items: center; }
+    .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; border: 1px solid var(--line2); border-radius: 99px; font-size: .84rem; color: var(--muted); background: rgba(255,255,255,.03); }
+    .pill b { background: var(--ok); color: #04150e; font-size: .72rem; padding: 2px 8px; border-radius: 99px; }
+    h1 { font-size: clamp(2.5rem, 5.4vw, 4.1rem); line-height: 1.04; letter-spacing: -.035em; margin: 22px 0 20px; font-weight: 800; }
+    .lead { font-size: 1.15rem; color: var(--muted); max-width: 520px; margin: 0 0 32px; }
+    .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+    .meta { margin-top: 18px; font-size: .86rem; color: var(--dim); }
+    .meta a { color: var(--muted); }
+    .checks { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 30px; font-size: .9rem; color: var(--muted); }
+    .checks span::before { content: "✓"; color: var(--ok); font-weight: 800; margin-right: 7px; }
+    @media (max-width: 920px) { .hero-grid { grid-template-columns: 1fr; gap: 50px; } .hero { padding-top: 50px; } }
+
+    /* Ventana de la app */
+    .window { border-radius: 14px; background: #1a1d29; border: 1px solid var(--line2); overflow: hidden;
+      box-shadow: 0 50px 100px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.03), 0 0 80px -20px rgba(110,110,255,.35); }
+    .window .bar { display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 14px; background: #202435; border-bottom: 1px solid var(--line); }
+    .window .bar i { width: 11px; height: 11px; border-radius: 50%; background: #3a3f55; }
+    .window .bar i:nth-child(1) { background: #ff5f57; } .window .bar i:nth-child(2) { background: #febc2e; } .window .bar i:nth-child(3) { background: #28c840; }
+    .window .bar span { margin: 0 auto; font-size: .75rem; color: var(--dim); padding-right: 50px; }
+    .hero .window { transform: perspective(1800px) rotateY(-7deg) rotateX(3deg); transition: transform .6s; }
+    .hero .window:hover { transform: perspective(1800px) rotateY(0) rotateX(0); }
+    @media (max-width: 920px) { .hero .window { transform: none; } }
+    .float { position: absolute; background: rgba(24,28,42,.92); backdrop-filter: blur(8px); border: 1px solid var(--line2); border-radius: 14px; padding: 12px 16px;
+      font-size: .82rem; box-shadow: 0 20px 40px -10px rgba(0,0,0,.6); display: flex; align-items: center; gap: 11px; animation: bob 5s ease-in-out infinite; }
+    .float b { display: block; font-size: 1.05rem; }
+    .float small { color: var(--muted); }
+    .float .ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-size: 1.1rem; }
+    .shot-wrap { position: relative; }
+    .f1 { left: -34px; bottom: 40px; } .f1 .ic { background: rgba(34,195,138,.16); }
+    .f2 { right: -20px; top: -22px; animation-delay: -2.5s; } .f2 .ic { background: rgba(240,169,42,.16); }
+    @keyframes bob { 50% { transform: translateY(-8px); } }
+    @media (max-width: 620px) { .float { display: none; } }
+
+    /* Tira de materiales */
+    .strip { padding: 50px 0 20px; text-align: center; }
+    .strip p { font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); margin: 0 0 18px; font-weight: 600; }
+    .strip ul { list-style: none; padding: 0; margin: 0; display: flex; justify-content: center; flex-wrap: wrap; gap: 14px 40px; }
+    .strip li { font-weight: 700; color: var(--muted); font-size: 1.05rem; opacity: .8; }
+
+    /* Cifras */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg2); margin-top: 60px; }
+    .stats div { padding: 28px 24px; border-right: 1px solid var(--line); }
+    .stats div:last-child { border: 0; }
+    .stats b { display: block; font-size: 2.3rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; }
+    .stats span { color: var(--muted); font-size: .9rem; }
+    @media (max-width: 720px) { .stats { grid-template-columns: 1fr 1fr; } .stats div:nth-child(2) { border-right: 0; } .stats div:nth-child(-n+2) { border-bottom: 1px solid var(--line); } }
+
+    /* Secciones */
+    section { padding: 110px 0 0; }
+    .eyebrow { display: inline-block; font-size: .8rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+    h2 { font-size: clamp(2rem, 3.8vw, 2.9rem); line-height: 1.1; letter-spacing: -.03em; margin: 0 0 16px; font-weight: 800; }
+    .head { text-align: center; max-width: 660px; margin: 0 auto 60px; }
+    .head p { color: var(--muted); font-size: 1.08rem; margin: 0; }
+
+    .row { display: grid; grid-template-columns: 1fr 1.3fr; gap: 70px; align-items: center; margin-bottom: 110px; }
+    .row.flip { grid-template-columns: 1.3fr 1fr; }
+    .row.flip .text { order: 2; }
+    .row .text h3 { font-size: 1.85rem; letter-spacing: -.025em; line-height: 1.15; margin: 0 0 14px; }
+    .row .text p { color: var(--muted); margin: 0 0 22px; font-size: 1.04rem; }
+    .row ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 11px; }
+    .row li { display: flex; gap: 12px; align-items: flex-start; color: #cfd3e3; font-size: .97rem; }
+    .row li::before { content: ""; flex: none; width: 20px; height: 20px; margin-top: 2px; border-radius: 6px;
+      background: rgba(91,124,255,.16) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-7' fill='none' stroke='%237d97ff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat; }
+    .tagicon { width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; font-size: 1.35rem; margin-bottom: 20px; border: 1px solid var(--line2);
+      background: linear-gradient(145deg, rgba(91,124,255,.2), rgba(143,107,255,.08)); }
+    @media (max-width: 920px) { .row, .row.flip { grid-template-columns: 1fr; gap: 36px; margin-bottom: 80px; } .row.flip .text { order: 0; } }
+
+    /* Plan */
+    .timeline { display: grid; grid-template-columns: 4fr 4fr 4fr 3fr 1.4fr; gap: 6px; margin-bottom: 18px; }
+    .timeline div { height: 10px; border-radius: 99px; background: var(--c); box-shadow: 0 0 20px -2px var(--c); }
+    .phases { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+    .phase { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px; position: relative; overflow: hidden; }
+    .phase::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: var(--c); }
+    .phase small { color: var(--c); font-weight: 700; font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; }
+    .phase h4 { margin: 8px 0 6px; font-size: 1.05rem; line-height: 1.3; }
+    .phase p { margin: 0 0 12px; color: var(--muted); font-size: .88rem; }
+    .phase .tv { font-size: .8rem; color: var(--dim); border-top: 1px solid var(--line); padding-top: 10px; }
+    @media (max-width: 980px) { .phases { grid-template-columns: repeat(2, 1fr); } .timeline { display: none; } }
+    @media (max-width: 560px) { .phases { grid-template-columns: 1fr; } }
+
+    /* Pasos */
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; counter-reset: s; }
+    .stepc { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; }
+    .stepc::before { counter-increment: s; content: counter(s); display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; margin-bottom: 18px;
+      font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+    .stepc h4 { margin: 0 0 6px; font-size: 1.12rem; }
+    .stepc p { margin: 0; color: var(--muted); font-size: .94rem; }
+    @media (max-width: 820px) { .steps { grid-template-columns: 1fr; } }
+
+    /* Descargas */
+    .downloads { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .dl { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; display: flex; flex-direction: column; position: relative; transition: border-color .2s, transform .2s; }
+    .dl:hover { transform: translateY(-3px); border-color: var(--line2); }
+    .dl.recommended { border-color: var(--accent); background: linear-gradient(180deg, rgba(91,124,255,.09), var(--card) 60%); }
+    .dl.recommended::after { content: "Tu sistema"; position: absolute; top: 18px; right: 18px; font-size: .72rem; font-weight: 700; color: #fff; background: var(--accent); padding: 3px 10px; border-radius: 99px; }
+    .dl .os { width: 50px; height: 50px; border-radius: 14px; display: grid; place-items: center; background: rgba(255,255,255,.05); border: 1px solid var(--line2); margin-bottom: 18px; }
+    .dl .os svg { width: 26px; height: 26px; }
+    .dl h3 { margin: 0 0 4px; font-size: 1.2rem; }
+    .dl .fmt { color: var(--dim); font-size: .85rem; margin-bottom: 14px; }
+    .dl p { margin: 0 0 22px; color: var(--muted); font-size: .93rem; flex: 1; }
+    .dl .btn { width: 100%; }
+    @media (max-width: 880px) { .downloads { grid-template-columns: 1fr; } }
+    .note { text-align: center; color: var(--dim); font-size: .86rem; margin-top: 22px; }
+
+    /* FAQ */
+    .faq { max-width: 780px; margin: 0 auto; }
+    .faq details { border-bottom: 1px solid var(--line); padding: 4px 0; }
+    .faq summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 18px 0; font-weight: 600; font-size: 1.04rem; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: "+"; font-size: 1.5rem; font-weight: 400; color: var(--muted); transition: transform .2s; }
+    .faq details[open] summary::after { transform: rotate(45deg); }
+    .faq details p { color: var(--muted); margin: 0 0 18px; }
+    code, pre { font-family: ui-monospace, "JetBrains Mono", monospace; font-size: .86em; }
+    code { background: rgba(255,255,255,.06); padding: 2px 6px; border-radius: 6px; }
+    pre { background: #080a10; border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; overflow-x: auto; margin: 0 0 18px; color: #cfd3e3; }
+
+    /* CTA final */
+    .final { margin-top: 120px; border-radius: 26px; padding: 70px 30px; text-align: center; position: relative; overflow: hidden; border: 1px solid var(--line2);
+      background: radial-gradient(500px 260px at 50% 0%, rgba(143,107,255,.35), transparent 70%), linear-gradient(180deg, #151a2b, #0f1220); }
+    .final img { width: 74px; margin: 0 auto 22px; }
+    .final p { color: var(--muted); max-width: 480px; margin: 0 auto 30px; font-size: 1.08rem; }
+
+    footer { padding: 60px 0 46px; color: var(--dim); font-size: .86rem; }
+    footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 30px; }
+    footer a { color: var(--muted); }
+
+    /* Animación al hacer scroll */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+    @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } .float { animation: none; } html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body>
+  <header class="nav" id="nav">
+    <div class="wrap">
+      <a class="brand" href="#"><img src="icon.png" alt="">C1 Tracker</a>
+      <nav>
+        <a href="#funciones">Funciones</a>
+        <a href="#plan">El plan</a>
+        <a href="#descargar">Descargar</a>
+        <a href="#faq">Preguntas</a>
+      </nav>
+      <a class="btn primary sm" href="#descargar">Descargar</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="hero">
+      <div class="wrap hero-grid">
+        <div class="reveal">
+          <span class="pill"><b>GRATIS</b> Para Linux y Windows · v1.0</span>
+          <h1>Aprueba el <span class="grad">C1 Advanced</span> estudiando desde casa.</h1>
+          <p class="lead">Abre la app cada día y sabrás exactamente qué toca: qué unidades del libro, qué episodio ver en inglés y cuándo ir a la biblioteca.</p>
+          <div class="ctas">
+            <a class="btn primary" id="hero-dl" href="#descargar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>
+              <span id="hero-dl-text">Descargar gratis</span>
+            </a>
+            <a class="btn ghost" href="#funciones">Ver cómo funciona</a>
+          </div>
+          <div class="meta" id="hero-meta">Linux (.deb, AppImage) y Windows · <a href="#descargar">todas las descargas</a></div>
+          <div class="checks"><span>Sin cuentas</span><span>Sin anuncios</span><span>Tus datos se quedan en tu PC</span></div>
+        </div>
+        <div class="shot-wrap reveal">
+          <div class="window"><div class="bar"><i></i><i></i><i></i><span>C1 Tracker</span></div><img src="img/hoy.jpg" alt="Pantalla Hoy de C1 Tracker: tareas del día, episodio que toca y notas"></div>
+          <div class="float f1"><div class="ic">✅</div><div><b>Unidad 6 hecha</b><small>Advanced Grammar in Use</small></div></div>
+          <div class="float f2"><div class="ic">🔥</div><div><b>12 días seguidos</b><small>135 días para el examen</small></div></div>
+        </div>
+      </div>
+
+      <div class="wrap">
+        <div class="strip reveal">
+          <p>Pensado para estudiar con</p>
+          <ul><li>Advanced Grammar in Use</li><li>Advanced Language Practice</li><li>Complete Advanced</li><li>Write &amp; Improve</li><li>Jellyfin</li></ul>
+        </div>
+        <div class="stats reveal">
+          <div><b>16</b><span>semanas de plan</span></div>
+          <div><b>131</b><span>días con tareas listas</span></div>
+          <div><b>4</b><span>papers del examen entrenados</span></div>
+          <div><b>0 €</b><span>gratis, sin trampas</span></div>
+        </div>
+      </div>
+    </div>
+
+    <section id="funciones">
+      <div class="wrap">
+        <div class="head reveal">
+          <span class="eyebrow">Funciones</span>
+          <h2>Todo tu plan de estudio en una sola app</h2>
+          <p>Sin hojas de cálculo ni pensar cada mañana qué hacer. Ábrela, haz lo que pone y marca la casilla.</p>
+        </div>
+
+        <div class="row reveal">
+          <div class="text">
+            <div class="tagicon">✅</div>
+            <h3>Cada día sabes exactamente qué hacer</h3>
+            <p>La pantalla <b>Hoy</b> te da las tareas del día ya repartidas, con lo que tienes que hacer en cada una y en qué libro.</p>
+            <ul>
+              <li>"Advanced Grammar in Use · Unidades 3–4", con instrucciones</li>
+              <li>Cuenta atrás para el examen, racha de días y tareas atrasadas</li>
+              <li>Notas del día para apuntar tus errores y las palabras nuevas</li>
+            </ul>
+          </div>
+          <div class="window"><div class="bar"><i></i><i></i><i></i><span>Hoy</span></div><img loading="lazy" src="img/hoy.jpg" alt="Pantalla Hoy"></div>
+        </div>
+
+        <div class="row flip reveal">
+          <div class="text">
+            <div class="tagicon">📅</div>
+            <h3>Todo el plan, de un vistazo</h3>
+            <p>Un <b>calendario</b> de noviembre a marzo con las cinco fases en colores. Pincha cualquier día para ver sus tareas.</p>
+            <ul>
+              <li>Verde lo hecho, naranja a medias, rojo lo que se te ha quedado atrás</li>
+              <li>Domingos de repaso, festivos libres y simulacros los sábados</li>
+              <li>El día del examen marcado</li>
+            </ul>
+          </div>
+          <div class="window"><div class="bar"><i></i><i></i><i></i><span>Calendario</span></div><img loading="lazy" src="img/calendario.jpg" alt="Calendario del plan"></div>
+        </div>
+
+        <div class="row reveal">
+          <div class="text">
+            <div class="tagicon">📚</div>
+            <h3>Hecha para estudiar con libros de papel</h3>
+            <p>Los libros son de la <b>biblioteca</b>. La app sabe cuándo necesitas cada uno y te avisa antes.</p>
+            <ul>
+              <li>Estado de cada libro: pendiente, reservado, en casa o devuelto</li>
+              <li>Fecha de devolución y aviso para renovar si aún lo necesitas</li>
+              <li>Enlaces a Write &amp; Improve para corregir tus writings</li>
+            </ul>
+          </div>
+          <div class="window"><div class="bar"><i></i><i></i><i></i><span>Materiales</span></div><img loading="lazy" src="img/materiales.jpg" alt="Materiales de la biblioteca"></div>
+        </div>
+
+        <div class="row flip reveal">
+          <div class="text">
+            <div class="tagicon">🎬</div>
+            <h3>Tus series y pelis en inglés, dentro de la app</h3>
+            <p>Conecta tu servidor <b>Jellyfin</b> y mira el episodio que toca hoy con un clic, con los subtítulos en inglés ya puestos.</p>
+            <ul>
+              <li>Series y películas de tu propia biblioteca</li>
+              <li>Botón "Ver en Jellyfin" en la pantalla Hoy</li>
+              <li>Sigue donde lo dejaste y marca lo que ya has visto</li>
+            </ul>
+          </div>
+          <div class="window"><div class="bar"><i></i><i></i><i></i><span>Series y pelis</span></div><img loading="lazy" src="img/series.jpg" alt="Conectar Jellyfin"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="plan" style="padding-top:20px">
+      <div class="wrap">
+        <div class="head reveal">
+          <span class="eyebrow">El plan</span>
+          <h2>16 semanas, de la gramática al examen</h2>
+          <p>Primero gramática, después el formato del examen y al final simulacros reales cronometrados.</p>
+        </div>
+        <div class="timeline reveal">
+          <div style="--c:#4f7cff"></div><div style="--c:#9b5cff"></div><div style="--c:#14a37f"></div><div style="--c:#e08a1e"></div><div style="--c:#e0457b"></div>
+        </div>
+        <div class="phases reveal">
+          <div class="phase" style="--c:#6f8fff"><small>Sem. 1–4</small><h4>Gramática I</h4><p>Advanced Grammar in Use, unidades 1–50.</p><div class="tv">🎬 The Crown T1</div></div>
+          <div class="phase" style="--c:#b08cff"><small>Sem. 5–8</small><h4>Gramática II</h4><p>Unidades 51–105 y Use of English de Vince.</p><div class="tv">🎬 Succession T1</div></div>
+          <div class="phase" style="--c:#2fc79d"><small>Sem. 9–12</small><h4>Formato del examen</h4><p>Complete Advanced 1–7 y un writing a la semana.</p><div class="tv">🎬 Succession T2</div></div>
+          <div class="phase" style="--c:#f0a23a"><small>Sem. 13–15</small><h4>Simulacros</h4><p>Unidades 8–14 y exámenes de 3h55 los sábados.</p><div class="tv">🎬 Sherlock T3</div></div>
+          <div class="phase" style="--c:#ff6b9d"><small>Sem. 16</small><h4>Repaso final</h4><p>Solo tus errores, un writing y a descansar.</p><div class="tv">☕ Descanso</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="head reveal">
+          <span class="eyebrow">Empieza en 1 minuto</span>
+          <h2>Así de fácil</h2>
+        </div>
+        <div class="steps reveal">
+          <div class="stepc"><h4>Descárgala</h4><p>Elige tu sistema abajo. Pesa unos 100 MB y no te pide ninguna cuenta.</p></div>
+          <div class="stepc"><h4>Recoge el primer libro</h4><p>Saca <i>Advanced Grammar in Use</i> de la biblioteca y apunta la fecha de devolución.</p></div>
+          <div class="stepc"><h4>Ábrela cada día</h4><p>Haz las tareas de Hoy, mira tu episodio y marca la casilla. Así hasta el examen.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="descargar">
+      <div class="wrap">
+        <div class="head reveal">
+          <span class="eyebrow">Descargar</span>
+          <h2>Gratis para Linux y Windows</h2>
+          <p>Versión 1.0.0. Tu progreso se guarda en tu ordenador.</p>
+        </div>
+        <div class="downloads reveal">
+          <div class="dl" data-os="linux">
+            <div class="os"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 2c-2 0-3.2 1.7-3.2 4.1 0 1.2.3 2-.4 3.2-.8 1.4-2.6 3.3-2.9 5.8-.1 1 .1 1.9.6 2.6-.6.4-1.6.6-1.9 1.3-.3.9.6 1.4 1.3 1.6 1.1.3 2.1 1.4 3.3 1.4.8 0 1.4-.5 1.8-1 .8.1 1.8.1 2.7 0 .4.6 1 1 1.9 1 1.3 0 2.2-1.1 3.3-1.5.7-.3 1.5-.8 1.2-1.6-.3-.7-1.2-.9-1.8-1.3.6-.8.7-1.8.5-2.8-.4-2.4-2.2-4.3-3-5.6-.7-1.2-.3-2-.4-3.2C15.4 3.6 14.5 2 12.5 2Zm-1.3 3.6c.4 0 .7.5.7 1.1 0 .4-.1.7-.3.9l-.6-.2c.1-.2.2-.4.2-.7 0-.4-.2-.6-.4-.6s-.3.2-.3.6c0 .2 0 .3.1.5l-.5.2c-.1-.2-.2-.5-.2-.8 0-.6.4-1 .7-1Zm2.6 0c.4 0 .8.5.8 1.1 0 .3-.1.6-.2.8l-.6-.2c.1-.2.2-.4.2-.6 0-.4-.2-.6-.4-.6-.2 0-.4.3-.4.7v.2l-.5-.1V6.7c0-.6.4-1.1 1.1-1.1Zm-1.2 2.4c.5 0 1.4.4 1.8.6.3.2.4.4.2.6-.4.4-1.2 1-2 1s-1.4-.6-1.8-1c-.2-.2-.1-.4.1-.6.4-.2 1.2-.6 1.7-.6Z"/></svg></div>
+            <h3>Linux</h3><div class="fmt">.deb · Ubuntu, Debian, Mint</div>
+            <p>Doble clic para instalar. Aparece en tu menú de aplicaciones como cualquier otra.</p>
+            <a class="btn primary get" data-file="C1-Tracker-1.0.0-linux-amd64.deb" href="#">Descargar .deb · 97 MB</a>
+          </div>
+          <div class="dl" data-os="linux-any">
+            <div class="os"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7l-9-5Z"/><path d="m3 7 9 5 9-5M12 12v10"/></svg></div>
+            <h3>Linux AppImage</h3><div class="fmt">Cualquier distribución · sin instalar</div>
+            <p>Un solo archivo: dale permiso de ejecución y ábrelo. Necesita <code>libfuse2</code>.</p>
+            <a class="btn ghost get" data-file="C1-Tracker-1.0.0-linux-x86_64.AppImage" href="#">Descargar AppImage · 121 MB</a>
+          </div>
+          <div class="dl" data-os="windows">
+            <div class="os"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10.5 4.4v7.1H3V5.5Zm8.5-1.2L21 3v8.5h-9.5V4.3ZM3 12.5h7.5v7.1L3 18.5v-6Zm8.5 0H21V21l-9.5-1.3v-7.2Z"/></svg></div>
+            <h3>Windows</h3><div class="fmt">.zip · Windows 10 y 11</div>
+            <p>Descomprime la carpeta donde quieras y abre <b>C1 Tracker.exe</b>. No necesita instalación.</p>
+            <a class="btn ghost get" data-file="C1-Tracker-1.0.0-win-x64.zip" href="#">Descargar .zip · 147 MB</a>
+          </div>
+        </div>
+        <p class="note">macOS: de momento no hay versión.</p>
+      </div>
+    </section>
+
+    <section id="faq">
+      <div class="wrap">
+        <div class="head reveal"><span class="eyebrow">Preguntas</span><h2>Preguntas frecuentes</h2></div>
+        <div class="faq reveal">
+          <details><summary>¿Es gratis de verdad?</summary><p>Sí. Ni cuentas, ni anuncios, ni suscripciones. Solo necesitas los libros, que puedes sacar de la biblioteca.</p></details>
+          <details><summary>¿Cómo instalo el .deb desde la terminal?</summary><pre>sudo apt install ./C1-Tracker-1.0.0-linux-amd64.deb</pre></details>
+          <details><summary>La AppImage no se abre</summary><p>Instala FUSE y dale permiso de ejecución:</p><pre>sudo apt install libfuse2
+chmod +x C1-Tracker-1.0.0-linux-x86_64.AppImage</pre></details>
+          <details><summary>Windows dice "Windows protegió tu PC"</summary><p>Sale porque la app no está firmada (firmarla cuesta dinero). Pulsa <b>Más información → Ejecutar de todas formas</b>.</p></details>
+          <details><summary>¿Necesito Jellyfin?</summary><p>No. Todo funciona sin él. Si tienes un servidor Jellyfin, en <b>Series y pelis</b> pones la dirección (por ejemplo <code>http://192.168.1.50:8096</code>), tu usuario y tu contraseña. La contraseña no se guarda, solo la sesión.</p></details>
+          <details><summary>¿Dónde se guarda mi progreso?</summary><p>Solo en tu ordenador. En ⚙ Ajustes puedes exportar una copia y llevártela a otro ordenador.</p></details>
+          <details><summary>¿Puedo cambiar la fecha del examen?</summary><p>Sí, en ⚙ Ajustes. La cuenta atrás se actualiza al momento.</p></details>
+        </div>
+
+        <div class="final reveal">
+          <img src="icon.png" alt="">
+          <h2>El examen no se aprueba solo.</h2>
+          <p>Pero con un plan para cada día, sí se aprueba. Descárgala y empieza hoy.</p>
+          <a class="btn primary" id="final-dl" href="#descargar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>
+            Descargar C1 Tracker
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>© 2026 C1 Tracker · Hecha por Robert Martí</span>
+      <span>No está afiliada a Cambridge University Press &amp; Assessment ni a Jellyfin.</span>
+    </div>
+  </footer>
+
+  <script>
+    // Dónde están los instaladores: GitHub Releases en internet, carpeta local al probar.
+    const LOCAL = ['localhost', '127.0.0.1', ''].includes(location.hostname);
+    const DOWNLOAD_BASE = LOCAL ? 'downloads/' : 'https://github.com/RobertMartiB/c1-tracker/releases/latest/download/';
+    document.querySelectorAll('a.get').forEach(a => { a.href = DOWNLOAD_BASE + a.dataset.file; });
+
+    // Los botones grandes descargan directamente la versión de tu sistema.
+    const ua = navigator.userAgent;
+    const os = /Windows/i.test(ua) ? 'windows' : /Linux|X11/i.test(ua) && !/Android/i.test(ua) ? 'linux' : null;
+    if (os) {
+      const card = document.querySelector(`.dl[data-os="${os}"]`);
+      card.classList.add('recommended');
+      card.querySelector('.btn').classList.replace('ghost', 'primary');
+      const href = card.querySelector('a.get').href;
+      for (const id of ['hero-dl', 'final-dl']) document.getElementById(id).href = href;
+      document.getElementById('hero-dl-text').textContent = os === 'windows' ? 'Descargar para Windows' : 'Descargar para Linux';
+      document.getElementById('hero-meta').innerHTML = `${os === 'windows' ? '.zip para Windows 10/11' : '.deb para Ubuntu/Debian'} · gratis · <a href="#descargar">otras versiones</a>`;
+    }
+
+    const nav = document.getElementById('nav');
+    addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 10), { passive: true });
+
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  </script>
+</body>
+</html>
