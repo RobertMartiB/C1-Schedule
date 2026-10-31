@@ -2,20 +2,26 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>C1 Tracker</title>
+  <meta name="theme-color" content="#12141b">
   <link rel="icon" href="favicon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="C1 Tracker">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <span class="brand">📘 C1 Advanced</span>
-    <nav>
-      <a href="#hoy" data-view="hoy">Hoy</a>
-      <a href="#calendario" data-view="calendario">Calendario</a>
-      <a href="#materiales" data-view="materiales">Materiales</a>
-      <a href="#series" data-view="series">Series y pelis</a>
-      <a href="#ajustes" data-view="ajustes" aria-label="Ajustes">⚙</a>
+  <header class="top">
+    <span class="brand">📘 C1 Tracker</span>
+    <nav class="main">
+      <a href="#hoy" data-view="hoy"><span>🏠</span>Hoy</a>
+      <a href="#ruta" data-view="ruta"><span>🧭</span>Ruta</a>
+      <a href="#vocabulario" data-view="vocabulario"><span>📇</span>Vocabulario</a>
+      <a href="#calendario" data-view="calendario"><span>📅</span>Calendario</a>
+      <a href="#series" data-view="series"><span>🎬</span>Series</a>
+      <a href="#ajustes" data-view="ajustes" aria-label="Ajustes"><span>⚙</span><i>Ajustes</i></a>
     </nav>
   </header>
   <main id="main"></main>
@@ -27,8 +33,16 @@
   <div id="toast" role="status"></div>
 
   <script src="vendor/hls.min.js"></script>
-  <script src="plan.js"></script>
+  <script src="course.js"></script>
+  <script src="units/u01.js"></script>
+  <script src="units/u02.js"></script>
   <script src="jellyfin.js"></script>
+  <script src="vocab.js"></script>
+  <script src="unit.js"></script>
   <script src="app.js"></script>
+  <script>
+    // App instalable en el móvil (no hace falta en la versión de escritorio)
+    if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  </script>
 </body>
 </html>

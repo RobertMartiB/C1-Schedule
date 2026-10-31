@@ -1,0 +1,15 @@
+{
+  "name": "C1 Tracker",
+  "short_name": "C1 Tracker",
+  "description": "Tu ruta de inglés de B1 a C1: teoría, práctica, lecturas desmontadas y vocabulario.",
+  "start_url": "./#hoy",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#12141b",
+  "theme_color": "#12141b",
+  "lang": "es",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

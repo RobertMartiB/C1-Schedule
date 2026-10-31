@@ -1,9 +1,11 @@
-// ---- Estado guardado en el navegador ----
+// ---- Estado guardado en el dispositivo ----
 const store = (() => {
-  const KEY = 'c1tracker:v1';
-  const defaults = () => ({ done: {}, notes: {}, books: {}, exam: '2027-03-13', jellyfin: null, resume: {} });
+  const KEY = 'c1tracker:v2';
+  const defaults = () => ({ done: {}, notes: {}, units: {}, cards: [], jellyfin: null, resume: {} });
   let state;
   try { state = { ...defaults(), ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch { state = defaults(); }
+  // Conserva la sesión de Jellyfin de la versión anterior
+  try { if (!state.jellyfin) { const old = JSON.parse(localStorage.getItem('c1tracker:v1') || '{}'); if (old.jellyfin) state.jellyfin = old.jellyfin; if (old.deviceId) state.deviceId = old.deviceId; } } catch {}
   return {
     get: () => state,
     set(fn) { fn(state); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} },
@@ -19,239 +21,194 @@ const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', '
 const longDate = s => { const d = parse(s); return `${DAYS[d.getDay()]} ${d.getDate()} de ${MONTHS[d.getMonth()]}`; };
 const shortDate = s => { const d = parse(s); return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)}`; };
 const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / 864e5);
-const phaseOf = s => PHASES.find(p => p.id === SCHEDULE[s]?.phase);
-const bookById = id => BOOKS.find(b => b.id === id);
-const KIND_ICON = { grammar: '📘', uoe: '✍️', exam: '🎯', writing: '📝', mock: '⏱️', review: '🔁', setup: '🧭', rest: '☕' };
 
-function isDone(s, i) { return (store.get().done[s] || []).includes(i); }
-function toggleDone(s, i) {
-  store.set(st => {
-    const arr = new Set(st.done[s] || []);
-    arr.has(i) ? arr.delete(i) : arr.add(i);
-    st.done[s] = [...arr];
-  });
+// ---- Bloques de cada día (3 horas) ----
+function dayBlocks(s) {
+  const d = SCHEDULE[s];
+  if (!d || d.rest) return [];
+  const blocks = [];
+  const m = d.main;
+  if (m.kind === 'unit') {
+    const u = unitById(m.unit), ses = SESSION[m.session];
+    blocks.push({ id: 'main', time: '1 h', icon: ses.icon, text: ses.text(u), detail: ses.detail, link: `#unidad/${u.id}/${ses.tab}`, ready: !!UNITS[u.id] });
+  } else {
+    blocks.push({ id: 'main', time: m.kind === 'mock' ? '3h55' : '1 h', icon: m.kind === 'mock' ? '⏱️' : m.kind === 'leveltest' ? '🏁' : '🔁', text: m.text, detail: m.detail, ready: true });
+  }
+  if (m.kind !== 'mock') {
+    const idx = m.kind === 'unit' ? SYLLABUS.findIndex(u => u.id === m.unit) : -1;
+    const prev = idx > 0 ? SYLLABUS[idx - 1] : null;
+    if (m.kind === 'unit' && m.session !== 'lectura' && prev && UNITS[prev.id])
+      blocks.push({ id: 'read', time: '45 min', icon: '🔍', text: `Lectura en modo reto: ${UNITS[prev.id].reading.title}`, detail: 'Relee la lectura de la unidad anterior. Antes de abrir cada frase, di en voz alta su sujeto y su verbo principal.', link: `#unidad/${prev.id}/lectura`, ready: true });
+    else
+      blocks.push({ id: 'read', time: '45 min', icon: '📰', text: 'Lectura libre en inglés', detail: 'Un artículo de tu nivel que te interese (News in Levels, BBC Learning English…). Desmonta solo las frases que no entiendas a la primera.', ext: [['News in Levels', 'https://www.newsinlevels.com'], ['BBC Learning English', 'https://www.bbc.co.uk/learningenglish']], ready: true });
+    if (d.input) blocks.push({ id: 'series', time: '45 min', icon: '🎬', text: `${d.input.name} · T${d.input.season}E${d.input.episode}`, detail: d.input.fresh ? 'Episodio nuevo con audio y subtítulos en inglés. Pausa cuando no entiendas una frase y apunta las expresiones nuevas.' : 'Vuelve a ver 15–20 minutos del episodio, esta vez intentando entenderlo sin mirar los subtítulos.', input: d.input, ready: true });
+  }
+  const due = Vocab.due(s).length;
+  blocks.push({ id: 'vocab', time: '30 min', icon: '📇', text: due ? `Tarjetas de vocabulario (${due} por repasar)` : 'Tarjetas de vocabulario', detail: 'Repasa las tarjetas del día y añade las palabras nuevas de hoy.', link: '#vocabulario', ready: true });
+  if (d.writing) blocks.push({ id: 'writing', time: '45 min', icon: '📝', text: 'Writing de la semana', detail: `${d.writing} Cuando lo tengas, pégaselo a Claude para que te lo corrija.`, ready: true });
+  return blocks;
+}
+
+const isDone = (s, id) => (store.get().done[s] || []).includes(id);
+function toggleDone(s, id) {
+  store.set(st => { const set = new Set(st.done[s] || []); set.has(id) ? set.delete(id) : set.add(id); st.done[s] = [...set]; });
 }
 function dayStatus(s) {
-  const d = SCHEDULE[s];
-  if (!d || !d.tasks.length) return 'none';
-  const n = d.tasks.filter((_, i) => isDone(s, i)).length;
-  if (n === d.tasks.length) return 'done';
+  const b = dayBlocks(s);
+  if (!b.length) return 'none';
+  const n = b.filter(x => isDone(s, x.id)).length;
+  if (n === b.length) return 'done';
   if (n > 0) return 'partial';
   return s < today() ? 'missed' : 'todo';
 }
 function streak() {
   let s = today(), n = 0;
   if (dayStatus(s) !== 'done') s = addDays(s, -1);
-  while (SCHEDULE[s] && dayStatus(s) === 'done') { n++; s = addDays(s, -1); }
+  for (let guard = 0; guard < 400 && SCHEDULE[s]; guard++) {
+    const st = dayStatus(s);
+    if (st === 'none') { s = addDays(s, -1); continue; }
+    if (st !== 'done') break;
+    n++; s = addDays(s, -1);
+  }
   return n;
 }
-function totals() {
-  let total = 0, done = 0, dueSoFar = 0, doneSoFar = 0;
-  for (const s in SCHEDULE) {
-    const n = SCHEDULE[s].tasks.length, k = (store.get().done[s] || []).length;
-    total += n; done += k;
-    if (s <= today()) { dueSoFar += n; doneSoFar += k; }
-  }
-  return { total, done, dueSoFar, doneSoFar };
-}
+const currentLevel = s => levelById(SCHEDULE[s]?.level || (s < PLAN_START ? 'b1' : 'exam'));
 
 // ---- Navegación ----
 let selectedDate = null;
 function route() {
-  const [view, arg] = (location.hash.slice(1) || 'hoy').split('/');
-  document.querySelectorAll('nav a').forEach(a => a.classList.toggle('active', a.dataset.view === view));
+  const [view, ...args] = (location.hash.slice(1) || 'hoy').split('/');
+  document.querySelectorAll('nav.main a').forEach(a => a.classList.toggle('active', a.dataset.view === view || (view === 'unidad' && a.dataset.view === 'ruta')));
   const main = $('#main');
-  ({ hoy: renderToday, calendario: renderCalendar, materiales: renderBooks, series: renderSeries, ajustes: renderSettings }[view] || renderToday)(main, arg);
+  const views = { hoy: renderToday, ruta: renderRoute, unidad: (m, a) => renderUnit(m, a[0], a[1]), vocabulario: m => Vocab.render(m), calendario: renderCalendar, series: (m, a) => renderSeries(m, a[0]), ajustes: renderSettings };
+  (views[view] || renderToday)(main, args);
   window.scrollTo(0, 0);
 }
 window.addEventListener('hashchange', route);
 
 // ---- HOY ----
-function bookAlerts() {
-  const out = [], t = today();
-  for (const b of BOOKS) {
-    const st = store.get().books[b.id] || {};
-    const needIn = daysBetween(t, b.from);
-    if (!['casa', 'devuelto'].includes(st.status) && b.to >= t && needIn <= 7)
-      out.push(`<b>${esc(b.title)}</b>: ${needIn > 0 ? `lo necesitas en ${needIn} día${needIn > 1 ? 's' : ''} (${shortDate(b.from)})` : 'lo necesitas ya'} y no lo tienes en casa.`);
-    if (st.status === 'casa' && st.due) {
-      const left = daysBetween(t, st.due);
-      if (left <= 3) out.push(`<b>${esc(b.title)}</b>: ${left < 0 ? `préstamo vencido hace ${-left} día${left < -1 ? 's' : ''}` : left === 0 ? 'se devuelve hoy' : `se devuelve en ${left} día${left > 1 ? 's' : ''}`}. ${b.to > st.due ? 'Renuévalo, aún lo necesitas hasta el ' + shortDate(b.to) + '.' : ''}`);
-    }
-  }
-  return out;
-}
-
-function renderToday(main, arg) {
+function renderToday(main, args) {
   const t = today();
-  let s = arg || selectedDate || t;
-  if (s < PLAN_START && !arg) s = PLAN_START;
-  if (s > PLAN_END && !arg) s = PLAN_END;
+  let s = args[0] || selectedDate || t;
+  if (s < PLAN_START && !args[0]) s = PLAN_START;
+  if (s > PLAN_END && !args[0]) s = PLAN_END;
   selectedDate = s;
-  const d = SCHEDULE[s];
-  const p = phaseOf(s);
-  const tot = totals();
-  const exam = store.get().exam;
-  const toExam = daysBetween(t, exam);
+  const d = SCHEDULE[s], lv = currentLevel(s), blocks = dayBlocks(s);
   const toStart = daysBetween(t, PLAN_START);
-  const alerts = bookAlerts();
+  const lvRange = LEVEL_RANGES[lv.id];
+  const lvDays = Object.keys(SCHEDULE).filter(x => x >= lvRange.from && x <= lvRange.to && !SCHEDULE[x].rest);
+  const lvPct = Math.round(lvDays.filter(x => x <= t).length / lvDays.length * 100);
+  const cardsDue = Vocab.due().length;
   const isToday = s === t;
 
   main.innerHTML = `
-    <section class="stats">
-      <div class="stat"><span class="num">${toExam > 0 ? toExam : '—'}</span><span>días para el examen</span></div>
-      <div class="stat"><span class="num">${streak()}</span><span>días seguidos</span></div>
-      <div class="stat"><span class="num">${tot.total ? Math.round(tot.done / tot.total * 100) : 0}%</span><span>del plan hecho</span></div>
-      <div class="stat"><span class="num">${tot.dueSoFar - tot.doneSoFar}</span><span>tareas atrasadas</span></div>
+    <section class="levelbar" style="--c:${lv.color}">
+      <div><span class="eyebrow">Nivel actual</span><b>${lv.name}</b><span class="muted small">${esc(lv.goal)}</span></div>
+      <div class="lvtrack"><div style="width:${Math.max(0, Math.min(100, lvPct))}%"></div></div>
+      <span class="muted small">${shortDate(lvRange.from)} → ${shortDate(lvRange.to)}</span>
     </section>
-    ${toStart > 0 ? `<div class="banner">Empiezas el <b>${longDate(PLAN_START)}</b> (en ${toStart} día${toStart > 1 ? 's' : ''}). Aquí tienes cómo será tu primer día.</div>` : ''}
-    ${alerts.length ? `<div class="banner warn">📚 <b>Biblioteca</b><ul>${alerts.map(a => `<li>${a}</li>`).join('')}</ul><a href="#materiales">Ir a Materiales →</a></div>` : ''}
+    <section class="stats">
+      <div class="stat"><span class="num">${streak()}</span><span>días seguidos</span></div>
+      <div class="stat"><span class="num">${cardsDue}</span><span>tarjetas por repasar</span></div>
+      <div class="stat"><span class="num">${SYLLABUS.filter(u => unitStatus(u.id).pct === 100).length}/${SYLLABUS.length}</span><span>unidades completas</span></div>
+    </section>
+    ${toStart > 0 ? `<div class="banner">Empiezas el <b>${longDate(PLAN_START)}</b> (en ${toStart} día${toStart > 1 ? 's' : ''}). Puedes ir abriendo la unidad 1 si quieres adelantar.</div>` : ''}
 
     <div class="dayhead">
-      <button class="icon" id="prev" aria-label="Día anterior" ${s <= PLAN_START ? 'disabled' : ''}>‹</button>
-      <div>
-        <h1>${isToday ? 'Hoy · ' : ''}${longDate(s)}</h1>
-        ${p ? `<span class="phase" style="--c:${p.color}">Semanas ${p.weeks} · ${esc(p.title)}</span>` : ''}
-      </div>
-      <button class="icon" id="next" aria-label="Día siguiente" ${s >= PLAN_END ? 'disabled' : ''}>›</button>
+      <button class="icon" id="prev" aria-label="Día anterior">‹</button>
+      <div><h1>${isToday ? 'Hoy · ' : ''}${longDate(s)}</h1>${d?.level ? `<span class="phase" style="--c:${lv.color}">${lv.name}</span>` : ''}</div>
+      <button class="icon" id="next" aria-label="Día siguiente">›</button>
     </div>
-    ${!isToday && t >= PLAN_START && t <= PLAN_END ? `<a class="back" href="#hoy/${t}">← Volver a hoy</a>` : ''}
+    ${!isToday ? `<a class="back" href="#hoy/${t}">← Volver a hoy</a>` : ''}
 
-    ${!d ? '<p class="empty">Este día está fuera del plan.</p>' : `
+    ${!d ? '<p class="empty">Este día está fuera del plan.</p>' : d.rest ? `<div class="restday">☕ <b>${esc(d.rest)}</b><p class="muted">Descansar también es parte del plan. Si te apetece, mira algo en inglés sin presión.</p></div>` : `
+    <p class="muted small">Unas 3 horas en bloques. Haz el bloque principal cuando tengas la cabeza más fresca.</p>
     <ul class="tasks">
-      ${d.tasks.map((task, i) => {
-        const book = task.book && bookById(task.book);
-        return `<li class="task ${isDone(s, i) ? 'done' : ''}">
-          <label>
-            <input type="checkbox" data-i="${i}" ${isDone(s, i) ? 'checked' : ''}>
-            <span class="ico">${KIND_ICON[task.kind] || '•'}</span>
-            <span class="body">
-              <span class="title">${esc(task.text)}</span>
-              <span class="detail">${esc(task.detail)}</span>
-              ${book ? `<span class="tag">📖 Libro físico: ${esc(book.title)}</span>` : ''}
-              ${task.link ? `<a class="tag link" href="${task.link}" target="_blank" rel="noopener">Abrir ${new URL(task.link).hostname} ↗</a>` : ''}
-            </span>
-          </label>
-        </li>`;
-      }).join('')}
+      ${blocks.map(b => `<li class="task ${isDone(s, b.id) ? 'done' : ''}">
+        <label>
+          <input type="checkbox" data-id="${b.id}" ${isDone(s, b.id) ? 'checked' : ''}>
+          <span class="ico">${b.icon}</span>
+          <span class="body">
+            <span class="title">${esc(b.text)} <span class="time">${b.time}</span></span>
+            <span class="detail">${esc(b.detail)}</span>
+            ${b.link ? (b.ready ? `<a class="tag link" href="${b.link}">Abrir →</a>` : `<span class="tag">Unidad en preparación: pídele a Claude que la prepare</span>`) : ''}
+            ${b.ext ? b.ext.map(([n, u]) => `<a class="tag link" href="${u}" target="_blank" rel="noopener">${n} ↗</a>`).join(' ') : ''}
+            ${b.input ? `<button class="tag link watch">▶ Ver en Jellyfin</button>` : ''}
+          </span>
+        </label>
+      </li>`).join('')}
     </ul>
-    ${d.input ? `
-    <div class="input-card">
-      <div>
-        <span class="label">🎬 Input en inglés</span>
-        <h3>${esc(d.input.name)} · T${d.input.season}E${d.input.episode}</h3>
-        <p>${d.input.fresh ? 'Episodio nuevo. Ponlo con <b>audio y subtítulos en inglés</b>.' : 'Si ya lo viste: repite 15–20 min de escenas del episodio y apunta 5 expresiones nuevas.'}</p>
-      </div>
-      <button class="primary" id="watch">▶ Ver en Jellyfin</button>
-    </div>` : ''}
     <label class="notes">
-      <span>Notas del día (errores, palabras nuevas…)</span>
-      <textarea id="note" rows="3" placeholder="p. ej. 'inversion after Not only… → repasar unidad 99'">${esc(store.get().notes[s] || '')}</textarea>
-    </label>`}
+      <span>Notas del día (errores, palabras nuevas, dudas para Claude…)</span>
+      <textarea id="note" rows="3">${esc(store.get().notes[s] || '')}</textarea>
+    </label>`}`;
 
-    ${p ? `<details class="phaseinfo"><summary>Qué toca en esta fase</summary>
-      <p><b>Libro:</b> ${esc(p.books)}</p><p>${esc(p.summary)}</p>
-      ${p.series ? `<p><b>Serie:</b> ${esc(p.series.name)} T${p.series.season} (subtítulos en inglés)</p>` : ''}</details>` : ''}
-  `;
-
-  $('#prev')?.addEventListener('click', () => { location.hash = `hoy/${addDays(s, -1)}`; });
-  $('#next')?.addEventListener('click', () => { location.hash = `hoy/${addDays(s, 1)}`; });
-  main.querySelectorAll('.tasks input').forEach(cb => cb.addEventListener('change', () => {
-    toggleDone(s, Number(cb.dataset.i));
-    renderToday(main, s);
-  }));
-  $('#note')?.addEventListener('input', e => store.set(st => {
-    if (e.target.value.trim()) st.notes[s] = e.target.value; else delete st.notes[s];
-  }));
-  $('#watch')?.addEventListener('click', async e => {
+  $('#prev').onclick = () => { location.hash = `hoy/${addDays(s, -1)}`; };
+  $('#next').onclick = () => { location.hash = `hoy/${addDays(s, 1)}`; };
+  main.querySelectorAll('.tasks input').forEach(cb => cb.addEventListener('change', () => { toggleDone(s, cb.dataset.id); renderToday(main, [s]); }));
+  main.querySelectorAll('.tasks a, .tasks button').forEach(a => a.addEventListener('click', e => e.stopPropagation()));
+  $('#note')?.addEventListener('input', e => store.set(st => { if (e.target.value.trim()) st.notes[s] = e.target.value; else delete st.notes[s]; }));
+  main.querySelector('.watch')?.addEventListener('click', async e => {
+    e.preventDefault();
     if (!Jellyfin.connected()) { location.hash = 'series'; return; }
-    const btn = e.currentTarget; btn.disabled = true; btn.textContent = 'Buscando…';
+    const btn = e.currentTarget, inp = d.input; btn.disabled = true; btn.textContent = 'Buscando…';
     try {
-      const ep = await Jellyfin.findEpisode(d.input.name, d.input.season, d.input.episode);
-      if (!ep) { toast(`No encuentro "${d.input.name}" T${d.input.season}E${d.input.episode} en tu Jellyfin.`); return; }
-      openPlayer(ep);
+      const ep = await Jellyfin.findEpisode(inp.name, inp.season, inp.episode);
+      if (!ep) toast(`No encuentro "${inp.name}" T${inp.season}E${inp.episode} en tu Jellyfin.`); else openPlayer(ep);
     } catch (err) { toast(err.message); }
     finally { btn.disabled = false; btn.textContent = '▶ Ver en Jellyfin'; }
   });
 }
 
+// ---- RUTA ----
+function renderRoute(main) {
+  const t = today();
+  main.innerHTML = `
+    <h1>Tu ruta</h1>
+    <p class="muted">De B1 a C1 con 3 horas al día. Cada unidad tiene teoría, práctica y una lectura desmontada.</p>
+    ${LEVELS.map(lv => {
+      const r = LEVEL_RANGES[lv.id], units = SYLLABUS.filter(u => u.level === lv.id);
+      const now = t >= r.from && t <= r.to;
+      return `<section class="lvl ${now ? 'now' : ''}" style="--c:${lv.color}">
+        <header><h2>${lv.name}</h2><span class="muted small">${shortDate(r.from)} → ${shortDate(r.to)} · 🎬 ${esc(lv.series.name)} T${lv.series.season}</span></header>
+        <p class="muted">${esc(lv.goal)}</p>
+        ${units.length ? `<ol class="units">${units.map(u => {
+          const st = unitStatus(u.id), n = SYLLABUS.indexOf(u) + 1;
+          return `<li><a href="#unidad/${u.id}/teoria" class="${st.ready ? '' : 'pending'}">
+            <span class="n">${n}</span>
+            <span class="ut"><b>${esc(u.title)}</b><small>${esc(u.focus)}</small></span>
+            <span class="us">${st.ready ? `<span class="ring" style="--p:${st.pct}">${st.pct}%</span>` : `<small>${UNIT_START[u.id] ? shortDate(UNIT_START[u.id]) : ''}</small>`}</span>
+          </a></li>`;
+        }).join('')}</ol>` : '<p>Formato de cada paper del examen, writings cronometrados y un simulacro completo cada sábado.</p>'}
+      </section>`;
+    }).join('')}`;
+}
+
 // ---- CALENDARIO ----
 function renderCalendar(main) {
   const months = [];
-  for (let d = parse(PLAN_START); d <= parse(PLAN_END); d = new Date(d.getFullYear(), d.getMonth() + 1, 1))
-    months.push([d.getFullYear(), d.getMonth()]);
+  for (let d = parse(PLAN_START); d <= parse(PLAN_END); d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) months.push([d.getFullYear(), d.getMonth()]);
   const t = today();
-
   main.innerHTML = `
     <h1>Calendario</h1>
-    <div class="legend">
-      ${PHASES.map(p => `<div class="leg" style="--c:${p.color}">
-        <b>Sem. ${p.weeks} · ${esc(p.title)}</b>
-        <span>${shortDate(p.from)} – ${shortDate(p.to)}</span>
-        <span>${esc(p.books)}</span>
-        ${p.series ? `<span>🎬 ${esc(p.series.name)} T${p.series.season}</span>` : ''}
-      </div>`).join('')}
-    </div>
-    <div class="keys"><span class="k done"></span>Hecho <span class="k partial"></span>A medias <span class="k missed"></span>Pendiente atrasado <span class="k exam"></span>Examen</div>
+    <div class="legend">${LEVELS.map(l => `<div class="leg" style="--c:${l.color}"><b>${l.name}</b><span>${shortDate(LEVEL_RANGES[l.id].from)} – ${shortDate(LEVEL_RANGES[l.id].to)}</span></div>`).join('')}</div>
+    <div class="keys"><span class="k done"></span>Hecho <span class="k partial"></span>A medias <span class="k missed"></span>Atrasado</div>
     <div class="months">
       ${months.map(([y, m]) => {
         const first = new Date(y, m, 1), lead = (first.getDay() + 6) % 7, n = new Date(y, m + 1, 0).getDate();
         let cells = '';
         for (let i = 0; i < lead; i++) cells += '<div></div>';
         for (let day = 1; day <= n; day++) {
-          const s = iso(new Date(y, m, day)), sd = SCHEDULE[s], p = phaseOf(s);
-          const cls = ['cell', dayStatus(s), s === t ? 'today' : '', s === store.get().exam ? 'exam' : '', sd?.holiday ? 'holiday' : ''].join(' ');
-          const title = sd ? sd.tasks.map(x => x.text).join('\n') : '';
-          cells += sd || s === store.get().exam
-            ? `<a href="#hoy/${s}" class="${cls}" style="--c:${p?.color || 'transparent'}" title="${esc(sd?.holiday || title || 'Examen')}">${day}</a>`
+          const s = iso(new Date(y, m, day)), sd = SCHEDULE[s];
+          const lv = sd?.level ? levelById(sd.level) : null;
+          const title = sd?.rest || (sd?.main ? (sd.main.kind === 'unit' ? SESSION[sd.main.session].text(unitById(sd.main.unit)) : sd.main.text) : '');
+          cells += sd
+            ? `<a href="#hoy/${s}" class="cell ${dayStatus(s)} ${s === t ? 'today' : ''} ${sd.rest ? 'rest' : ''}" style="--c:${lv?.color || 'transparent'}" title="${esc(title)}">${day}</a>`
             : `<div class="cell off">${day}</div>`;
         }
-        return `<div class="month"><h3>${MONTHS[m]} ${y}</h3>
-          <div class="grid"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>${cells}</div></div>`;
+        return `<div class="month"><h3>${MONTHS[m]} ${y}</h3><div class="grid"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>${cells}</div></div>`;
       }).join('')}
     </div>`;
-}
-
-// ---- MATERIALES ----
-const STATUS = { pendiente: 'Pendiente de coger', reservado: 'Reservado', casa: 'Lo tengo en casa', devuelto: 'Devuelto' };
-function renderBooks(main) {
-  const t = today();
-  main.innerHTML = `
-    <h1>Materiales</h1>
-    <p class="muted">Libros físicos de la biblioteca. Apunta cuándo los coges y la fecha de devolución: te avisaré en "Hoy" si hay que renovarlos o ir a buscarlos.</p>
-    <div class="books">
-      ${BOOKS.map(b => {
-        const st = store.get().books[b.id] || {};
-        const active = b.from <= t && b.to >= t;
-        return `<article class="book ${active ? 'active' : ''}" data-id="${b.id}">
-          <div class="cover">📖</div>
-          <div class="info">
-            <h3>${esc(b.title)}</h3>
-            <span class="muted">${esc(b.author)}</span>
-            <p>${esc(b.why)}</p>
-            <p class="when">Lo usas del <b>${shortDate(b.from)}</b> al <b>${shortDate(b.to)}</b>${active ? ' · <span class="now">ahora</span>' : ''}</p>
-            <div class="row">
-              <label>Estado
-                <select data-k="status">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${(st.status || 'pendiente') === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
-              </label>
-              <label>Devolver el
-                <input type="date" data-k="due" value="${st.due || ''}">
-              </label>
-            </div>
-          </div>
-        </article>`;
-      }).join('')}
-    </div>
-    <h2>Online (gratis)</h2>
-    <ul class="links">
-      <li><a href="https://writeandimprove.com" target="_blank" rel="noopener">Write & Improve</a> — corrección automática de tus writings (Cambridge).</li>
-      <li><a href="https://www.cambridgeenglish.org/exams-and-tests/qualifications/advanced/" target="_blank" rel="noopener">C1 Advanced · Cambridge</a> — formato del examen y sample papers oficiales.</li>
-    </ul>`;
-  main.querySelectorAll('.book [data-k]').forEach(el => el.addEventListener('change', () => {
-    const id = el.closest('.book').dataset.id;
-    store.set(s => { s.books[id] = { ...(s.books[id] || {}), [el.dataset.k]: el.value }; });
-    toast('Guardado');
-  }));
 }
 
 // ---- SERIES (Jellyfin) ----
@@ -267,6 +224,7 @@ async function renderSeries(main, arg) {
         <label>Contraseña<input name="pass" type="password" autocomplete="current-password"></label>
         <button class="primary" type="submit">Conectar</button>
         <p class="muted small">La contraseña no se guarda: solo se guarda la sesión que te da el servidor.</p>
+        ${location.protocol === 'https:' ? '<p class="muted small">⚠️ Desde la versión web solo funciona si tu Jellyfin usa <b>https</b>. Si es <b>http</b>, usa la app de escritorio.</p>' : ''}
         <p class="error" id="err"></p>
       </form>`;
     $('#login').addEventListener('submit', async e => {
@@ -284,7 +242,7 @@ async function renderSeries(main, arg) {
 
   if (arg) return renderShow(main, arg);
   const c = Jellyfin.conf();
-  const planNames = [...new Set(PHASES.filter(p => p.series).map(p => p.series.name.toLowerCase()))];
+  const planNames = [...new Set(LEVELS.map(l => l.series.name.toLowerCase()))];
   main.innerHTML = `
     <div class="sethead"><h1>Series y películas</h1>
       <span class="muted small">${esc(c.userName)} @ ${esc(c.server)} · <a href="#" id="logout">Desconectar</a></span></div>
@@ -402,19 +360,17 @@ function closePlayer() {
 function renderSettings(main) {
   main.innerHTML = `
     <h1>Ajustes</h1>
-    <label class="field">Fecha del examen <input type="date" id="exam" value="${store.get().exam}"></label>
     <h2>Copia de seguridad</h2>
-    <p class="muted">Tu progreso se guarda en este navegador. Exporta una copia de vez en cuando.</p>
+    <p class="muted">Tu progreso se guarda en este dispositivo. Exporta una copia de vez en cuando, y úsala para pasar tu progreso del ordenador al móvil o al revés.</p>
     <div class="row">
       <button id="export">Exportar progreso</button>
       <label class="btn">Importar<input type="file" id="import" accept=".json" hidden></label>
     </div>`;
-  $('#exam').addEventListener('change', e => { store.set(s => { s.exam = e.target.value; }); toast('Guardado'); });
   $('#export').addEventListener('click', () => {
     const { jellyfin, ...data } = store.get();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
-    a.download = `c1-progreso-${today()}.json`; a.click();
+    a.download = `ingles-progreso-${today()}.json`; a.click();
   });
   $('#import').addEventListener('change', async e => {
     try { store.replace({ ...JSON.parse(await e.target.files[0].text()), jellyfin: store.get().jellyfin }); toast('Progreso importado'); }

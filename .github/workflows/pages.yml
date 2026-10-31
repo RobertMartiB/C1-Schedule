@@ -2,7 +2,7 @@ name: Publicar web
 on:
   push:
     branches: [main]
-    paths: ['website/**', '.github/workflows/pages.yml']
+    paths: ['website/**', 'src/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -16,6 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      - name: Copiar la app web dentro de la web
+        run: cp -r src website/app
       - uses: actions/upload-pages-artifact@v3
         with: { path: website }
       - id: deploy

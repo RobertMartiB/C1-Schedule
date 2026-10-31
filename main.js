@@ -8,7 +8,7 @@ const path = require('path');
 
 const PORT = 47821;
 const ROOT = path.join(__dirname, 'src');
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json' };
+const TYPES = { '.webmanifest': 'application/manifest+json', '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
 function startServer() {
   return new Promise((resolve, reject) => {
