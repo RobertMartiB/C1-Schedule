@@ -101,5 +101,5 @@ const Jellyfin = (() => {
 
   const markPlayed = itemId => api(`/Users/${conf().userId}/PlayedItems/${itemId}`, { method: 'POST' }).catch(() => {});
 
-  return { login, logout, connected, conf, imageUrl, listSeries, listMovies, seasons, episodes, findEpisode, playback, markPlayed };
+  return { api, login, logout, connected, conf, imageUrl, listSeries, listMovies, seasons, episodes, findEpisode, playback, markPlayed };
 })();

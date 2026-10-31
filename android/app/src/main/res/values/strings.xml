@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">C1 Tracker</string>
+    <string name="title_activity_main">C1 Tracker</string>
+    <string name="package_name">dev.robert.c1tracker</string>
+    <string name="custom_url_scheme">dev.robert.c1tracker</string>
+</resources>

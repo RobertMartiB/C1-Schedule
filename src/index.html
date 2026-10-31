@@ -10,15 +10,18 @@
   <link rel="apple-touch-icon" href="icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="C1 Tracker">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="top">
-    <span class="brand">📘 C1 Tracker</span>
+    <span class="brand"><img src="icon.png" alt="">C1 Tracker</span>
     <nav class="main">
       <a href="#hoy" data-view="hoy"><span>🏠</span>Hoy</a>
       <a href="#ruta" data-view="ruta"><span>🧭</span>Ruta</a>
-      <a href="#vocabulario" data-view="vocabulario"><span>📇</span>Vocabulario</a>
+      <a href="#vocabulario" data-view="vocabulario"><span>📇</span>Palabras</a>
       <a href="#calendario" data-view="calendario"><span>📅</span>Calendario</a>
       <a href="#series" data-view="series"><span>🎬</span>Series</a>
       <a href="#ajustes" data-view="ajustes" aria-label="Ajustes"><span>⚙</span><i>Ajustes</i></a>
@@ -37,6 +40,7 @@
   <script src="units/u01.js"></script>
   <script src="units/u02.js"></script>
   <script src="jellyfin.js"></script>
+  <script src="sync.js"></script>
   <script src="vocab.js"></script>
   <script src="unit.js"></script>
   <script src="app.js"></script>

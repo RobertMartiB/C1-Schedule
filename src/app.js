@@ -8,7 +8,7 @@ const store = (() => {
   try { if (!state.jellyfin) { const old = JSON.parse(localStorage.getItem('c1tracker:v1') || '{}'); if (old.jellyfin) state.jellyfin = old.jellyfin; if (old.deviceId) state.deviceId = old.deviceId; } } catch {}
   return {
     get: () => state,
-    set(fn) { fn(state); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} },
+    set(fn) { fn(state); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} if (typeof Sync !== 'undefined') Sync.schedule(); },
     replace(s) { state = { ...defaults(), ...s }; this.set(() => {}); },
   };
 })();
@@ -101,18 +101,30 @@ function renderToday(main, args) {
   const cardsDue = Vocab.due().length;
   const isToday = s === t;
 
+  const doneN = blocks.filter(b => isDone(s, b.id)).length;
+  const dayPct = blocks.length ? Math.round(doneN / blocks.length * 100) : 0;
+  const hour = new Date().getHours();
+  const hello = hour < 6 ? 'Buenas noches' : hour < 14 ? 'Buenos días' : hour < 21 ? 'Buenas tardes' : 'Buenas noches';
+
   main.innerHTML = `
-    <section class="levelbar" style="--c:${lv.color}">
-      <div><span class="eyebrow">Nivel actual</span><b>${lv.name}</b><span class="muted small">${esc(lv.goal)}</span></div>
+    <section class="hero" style="--c:${lv.color}">
+      <div class="hero-top">
+        <div>
+          <span class="eyebrow">${hello} · Nivel actual</span>
+          <div class="lvname">${lv.name}</div>
+          <div class="goal">${esc(lv.goal)}</div>
+        </div>
+        ${blocks.length ? `<div class="dayring" style="--p:${dayPct}"><div><b>${doneN}/${blocks.length}</b><small>hoy</small></div></div>` : ''}
+      </div>
       <div class="lvtrack"><div style="width:${Math.max(0, Math.min(100, lvPct))}%"></div></div>
-      <span class="muted small">${shortDate(lvRange.from)} → ${shortDate(lvRange.to)}</span>
+      <div class="range">${shortDate(lvRange.from)} → ${shortDate(lvRange.to)} · ${Math.max(0, Math.min(100, lvPct))}% del nivel</div>
+      <div class="hero-stats">
+        <div><b>🔥 ${streak()}</b><span>días seguidos</span></div>
+        <div><b>📇 ${cardsDue}</b><span>tarjetas hoy</span></div>
+        <div><b>✓ ${SYLLABUS.filter(u => unitStatus(u.id).pct === 100).length}</b><span>de ${SYLLABUS.length} unidades</span></div>
+      </div>
     </section>
-    <section class="stats">
-      <div class="stat"><span class="num">${streak()}</span><span>días seguidos</span></div>
-      <div class="stat"><span class="num">${cardsDue}</span><span>tarjetas por repasar</span></div>
-      <div class="stat"><span class="num">${SYLLABUS.filter(u => unitStatus(u.id).pct === 100).length}/${SYLLABUS.length}</span><span>unidades completas</span></div>
-    </section>
-    ${toStart > 0 ? `<div class="banner">Empiezas el <b>${longDate(PLAN_START)}</b> (en ${toStart} día${toStart > 1 ? 's' : ''}). Puedes ir abriendo la unidad 1 si quieres adelantar.</div>` : ''}
+    ${toStart > 0 ? `<div class="banner">🚀 Empiezas el <b>${longDate(PLAN_START)}</b> (en ${toStart} día${toStart > 1 ? 's' : ''}). Puedes ir abriendo la unidad 1 si quieres adelantar.</div>` : ''}
 
     <div class="dayhead">
       <button class="icon" id="prev" aria-label="Día anterior">‹</button>
@@ -121,8 +133,8 @@ function renderToday(main, args) {
     </div>
     ${!isToday ? `<a class="back" href="#hoy/${t}">← Volver a hoy</a>` : ''}
 
-    ${!d ? '<p class="empty">Este día está fuera del plan.</p>' : d.rest ? `<div class="restday">☕ <b>${esc(d.rest)}</b><p class="muted">Descansar también es parte del plan. Si te apetece, mira algo en inglés sin presión.</p></div>` : `
-    <p class="muted small">Unas 3 horas en bloques. Haz el bloque principal cuando tengas la cabeza más fresca.</p>
+    ${!d ? '<p class="empty">Este día está fuera del plan.</p>' : d.rest ? `<div class="restday"><div class="big">☕</div><b>${esc(d.rest)}</b><p class="muted">Descansar también es parte del plan. Si te apetece, mira algo en inglés sin presión.</p></div>` : `
+    <p class="muted small daynote">Unas 3 horas en bloques. Haz el bloque principal cuando tengas la cabeza más fresca.</p>
     <ul class="tasks">
       ${blocks.map(b => `<li class="task ${isDone(s, b.id) ? 'done' : ''}">
         <label>
@@ -170,7 +182,7 @@ function renderRoute(main) {
       const r = LEVEL_RANGES[lv.id], units = SYLLABUS.filter(u => u.level === lv.id);
       const now = t >= r.from && t <= r.to;
       return `<section class="lvl ${now ? 'now' : ''}" style="--c:${lv.color}">
-        <header><h2>${lv.name}</h2><span class="muted small">${shortDate(r.from)} → ${shortDate(r.to)} · 🎬 ${esc(lv.series.name)} T${lv.series.season}</span></header>
+        <header><h2>${lv.name}${now ? '<span class="nowtag">Ahora</span>' : ''}</h2><span class="muted small">${shortDate(r.from)} → ${shortDate(r.to)} · 🎬 ${esc(lv.series.name)} T${lv.series.season}</span></header>
         <p class="muted">${esc(lv.goal)}</p>
         ${units.length ? `<ol class="units">${units.map(u => {
           const st = unitStatus(u.id), n = SYLLABUS.indexOf(u) + 1;
@@ -360,12 +372,22 @@ function closePlayer() {
 function renderSettings(main) {
   main.innerHTML = `
     <h1>Ajustes</h1>
+    <h2>Sincronizar entre dispositivos</h2>
+    <div class="panel">
+      <p>Tu progreso (días hechos, unidades, tarjetas y notas) se comparte entre el móvil y el ordenador a través de tu servidor Jellyfin. Entra en <b>Series</b> con el mismo usuario en los dos dispositivos.</p>
+      <p><span class="syncdot"></span><span data-sync-label></span></p>
+      <div class="row"><button class="primary" id="syncnow" ${Jellyfin.connected() ? '' : 'disabled'}>Sincronizar ahora</button>
+      <label class="row small"><input type="checkbox" id="syncon" style="width:auto" ${store.get().syncOn !== false ? 'checked' : ''}> Sincronizar automáticamente</label></div>
+    </div>
     <h2>Copia de seguridad</h2>
     <p class="muted">Tu progreso se guarda en este dispositivo. Exporta una copia de vez en cuando, y úsala para pasar tu progreso del ordenador al móvil o al revés.</p>
     <div class="row">
       <button id="export">Exportar progreso</button>
       <label class="btn">Importar<input type="file" id="import" accept=".json" hidden></label>
     </div>`;
+  Sync.paint();
+  $('#syncnow').onclick = () => Sync.now();
+  $('#syncon').onchange = e => { store.set(s => { s.syncOn = e.target.checked; }); Sync.paint(); };
   $('#export').addEventListener('click', () => {
     const { jellyfin, ...data } = store.get();
     const a = document.createElement('a');
@@ -384,5 +406,20 @@ function toast(msg) {
 }
 
 $('#pclose').addEventListener('click', closePlayer);
+
+// Al sincronizar, refresca la pantalla si no estás escribiendo
+Sync.setOnSynced(() => {
+  const view = (location.hash.slice(1) || 'hoy').split('/')[0];
+  const typing = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName);
+  if (!typing && ['hoy', 'ruta', 'calendario', 'vocabulario'].includes(view)) route();
+});
+if (Sync.enabled()) setTimeout(() => Sync.now(), 800);
+
+// App de Android: botón "atrás" del sistema
+const CapApp = window.Capacitor?.Plugins?.App;
+if (CapApp) CapApp.addListener('backButton', () => {
+  if ($('#player').open) { closePlayer(); return; }
+  if (location.hash && !/^#(hoy)?$/.test(location.hash)) history.back(); else CapApp.exitApp();
+});
 $('#player').addEventListener('close', () => { if (hls || $('#video').src) closePlayer(); });
 route();
