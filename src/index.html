@@ -22,7 +22,7 @@
       <a href="#hoy" data-view="hoy"><span>🏠</span>Hoy</a>
       <a href="#ruta" data-view="ruta"><span>🧭</span>Ruta</a>
       <a href="#vocabulario" data-view="vocabulario"><span>📇</span>Palabras</a>
-      <a href="#calendario" data-view="calendario"><span>📅</span>Calendario</a>
+      <a href="#libro" data-view="libro"><span>📚</span>Libro</a>
       <a href="#series" data-view="series"><span>🎬</span>Series</a>
       <a href="#ajustes" data-view="ajustes" aria-label="Ajustes"><span>⚙</span><i>Ajustes</i></a>
     </nav>
@@ -30,8 +30,13 @@
   <main id="main"></main>
 
   <dialog id="player">
-    <div class="phead"><span id="ptitle"></span><button class="icon" id="pclose" aria-label="Cerrar">✕</button></div>
-    <video id="video" controls playsinline crossorigin="anonymous"></video>
+    <div class="phead"><span id="ptitle"></span>
+      <div class="row"><button class="icon pbtn" id="pquiz" aria-label="Reto ahora" title="Reto ahora">🎯</button><button class="icon pbtn" id="pfull" aria-label="Pantalla completa" title="Pantalla completa">⛶</button><button class="icon pbtn" id="pclose" aria-label="Cerrar">✕</button></div>
+    </div>
+    <div class="pstage">
+      <video id="video" controls playsinline crossorigin="anonymous" controlslist="nofullscreen nodownload"></video>
+      <div id="quiz" hidden></div>
+    </div>
   </dialog>
   <div id="toast" role="status"></div>
 
@@ -39,6 +44,13 @@
   <script src="course.js"></script>
   <script src="units/u01.js"></script>
   <script src="units/u02.js"></script>
+  <script src="units/u03.js"></script>
+  <script src="units/u04.js"></script>
+  <script src="units/u05.js"></script>
+  <script src="units/u06.js"></script>
+  <script src="units/u07.js"></script>
+  <script src="units/u08.js"></script>
+  <script src="reference.js"></script>
   <script src="jellyfin.js"></script>
   <script src="sync.js"></script>
   <script src="vocab.js"></script>

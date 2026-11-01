@@ -9,8 +9,11 @@ const Jellyfin = (() => {
     return id;
   }
   const conf = () => store.get().jellyfin;
+  const DEVICE = window.Capacitor ? 'Android' : /Electron/.test(navigator.userAgent) ? 'Escritorio' : 'Navegador';
+  // Jellyfin 10.11 ya no acepta el antiguo "api_key" en la URL: se manda también "ApiKey"
+  const keyParams = t => `ApiKey=${t}&api_key=${t}`;
   const authHeader = token =>
-    `MediaBrowser Client="${CLIENT}", Device="Navegador", DeviceId="${deviceId()}", Version="${VERSION}"` +
+    `MediaBrowser Client="${CLIENT}", Device="${DEVICE}", DeviceId="${deviceId()}", Version="${VERSION}"` +
     (token ? `, Token="${token}"` : '');
 
   async function api(path, { method = 'GET', body, query } = {}) {
@@ -22,7 +25,8 @@ const Jellyfin = (() => {
       headers: { Authorization: authHeader(c.token), ...(body ? { 'Content-Type': 'application/json' } : {}) },
       body: body ? JSON.stringify(body) : undefined,
     });
-    if (res.status === 401) { logout(); throw new Error('La sesión de Jellyfin ha caducado. Vuelve a entrar.'); }
+    // No se borra la sesión por un fallo puntual: solo se marca para pedir que vuelvas a entrar
+    if (res.status === 401) { store.set(s => { if (s.jellyfin) s.jellyfin.expired = true; }); throw new Error('Tu sesión de Jellyfin ha caducado. Vuelve a entrar en Series.'); }
     if (!res.ok) throw new Error(`Jellyfin respondió ${res.status}`);
     return res.status === 204 ? null : res.json().catch(() => null);
   }
@@ -43,14 +47,14 @@ const Jellyfin = (() => {
     if (res.status === 401) throw new Error('Usuario o contraseña incorrectos.');
     if (!res.ok) throw new Error(`El servidor respondió ${res.status}.`);
     const data = await res.json();
-    store.set(s => { s.jellyfin = { server, token: data.AccessToken, userId: data.User.Id, userName: data.User.Name }; });
+    store.set(s => { s.jellyfin = { server, token: data.AccessToken, userId: data.User.Id, userName: data.User.Name }; s.lastServer = server; s.lastUser = data.User.Name; });
   }
 
   function logout() { store.set(s => { s.jellyfin = null; }); }
-  const connected = () => !!conf()?.token;
+  const connected = () => !!conf()?.token && !conf()?.expired;
 
   const imageUrl = (id, h = 360, type = 'Primary') =>
-    `${conf().server}/Items/${id}/Images/${type}?fillHeight=${h}&quality=85&api_key=${conf().token}`;
+    `${conf().server}/Items/${id}/Images/${type}?fillHeight=${h}&quality=85&${keyParams(conf().token)}`;
 
   const listSeries = searchTerm => api('/Items', {
     query: {
@@ -85,7 +89,7 @@ const Jellyfin = (() => {
     const info = await api(`/Items/${itemId}/PlaybackInfo`, { method: 'POST', query: { userId: c.userId }, body: {} });
     const source = info.MediaSources[0];
     const q = new URLSearchParams({
-      api_key: c.token, MediaSourceId: source.Id, DeviceId: deviceId(), PlaySessionId: info.PlaySessionId,
+      ApiKey: c.token, api_key: c.token, MediaSourceId: source.Id, DeviceId: deviceId(), PlaySessionId: info.PlaySessionId,
       VideoCodec: 'h264', AudioCodec: 'aac,mp3', TranscodingMaxAudioChannels: '2',
       VideoBitrate: '10000000', AudioBitrate: '192000', SegmentContainer: 'ts',
     });
@@ -94,7 +98,7 @@ const Jellyfin = (() => {
       .map(s => ({
         label: s.DisplayTitle || s.Language || `Pista ${s.Index}`,
         lang: s.Language || '',
-        url: `${c.server}/Videos/${itemId}/${source.Id}/Subtitles/${s.Index}/0/Stream.vtt?api_key=${c.token}`,
+        url: `${c.server}/Videos/${itemId}/${source.Id}/Subtitles/${s.Index}/0/Stream.vtt?${keyParams(c.token)}`,
       }));
     return { url: `${c.server}/Videos/${itemId}/master.m3u8?${q}`, subtitles };
   }

@@ -209,3 +209,66 @@ function drawBreakdown(box, id, k) {
   $('#bdnext')?.addEventListener('click', () => { document.querySelector(`.sent[data-k="${k + 1}"]`).click(); });
   Vocab.bindAddButtons(box);
 }
+
+// ---------- Libro: toda la gramática para leer y consultar ----------
+const BOOK_PDF = 'https://robertmartib.github.io/c1-tracker/libro/C1-Tracker-Libro-B1.pdf';
+function bookIndex() {
+  return SYLLABUS.map((u, i) => ({ ...u, n: i + 1, text: UNITS[u.id] ? (u.title + ' ' + u.focus + ' ' + UNITS[u.id].theory.map(t => t.h + ' ' + t.html.replace(/<[^>]+>/g, ' ')).join(' ')).toLowerCase() : '' }));
+}
+function renderBook(main, args) {
+  const id = args[0];
+  if (id === 'irregulares') return renderIrregular(main);
+  if (id) return renderBookUnit(main, id);
+  const idx = bookIndex();
+  main.innerHTML = `
+    <section class="bookhead">
+      <span class="eyebrow">Tu libro de gramática</span>
+      <h1>De B1 a C1</h1>
+      <p class="muted">Toda la teoría de la ruta, unidad por unidad. Es lo mismo que estudias cada día en la app: aquí lo tienes ordenado para leer y consultar.</p>
+      <div class="row"><a class="btn primary" href="${BOOK_PDF}" target="_blank" rel="noopener">📄 Libro en PDF para imprimir</a><a class="btn" href="#libro/irregulares">Verbos irregulares</a></div>
+    </section>
+    <input class="search" id="bq" placeholder="Busca un tema: since, pasiva, although, used to…" autocomplete="off" autocapitalize="off">
+    <div id="blist"></div>`;
+  const draw = q => {
+    q = q.trim().toLowerCase();
+    $('#blist').innerHTML = LEVELS.filter(l => l.id !== 'exam').map(lv => {
+      const items = idx.filter(u => u.level === lv.id && (!q || u.text.includes(q)));
+      if (!items.length) return '';
+      return `<section class="lvl" style="--c:${lv.color}"><header><h2>${lv.name}</h2></header>
+        <ol class="units">${items.map(u => `<li><a href="#libro/${u.id}" class="${UNITS[u.id] ? '' : 'pending'}"><span class="n">${u.n}</span>
+          <span class="ut"><b>${esc(u.title)}</b><small>${esc(u.focus)}</small></span><span class="us">${UNITS[u.id] ? '📖' : '<small>pronto</small>'}</span></a></li>`).join('')}</ol></section>`;
+    }).join('') || '<p class="empty">No hay ninguna unidad sobre eso todavía.</p>';
+  };
+  draw('');
+  $('#bq').oninput = e => draw(e.target.value);
+}
+function renderBookUnit(main, id) {
+  const meta = unitById(id), u = UNITS[id];
+  if (!meta || !u) { main.innerHTML = '<a class="back" href="#libro">← Libro</a><p class="empty">Esta unidad todavía no está escrita.</p>'; return; }
+  const i = SYLLABUS.indexOf(meta), lv = levelById(meta.level);
+  const prev = SYLLABUS.slice(0, i).reverse().find(x => UNITS[x.id]), next = SYLLABUS.slice(i + 1).find(x => UNITS[x.id]);
+  main.innerHTML = `
+    <a class="back" href="#libro">← Índice del libro</a>
+    <header class="unit-head" style="--c:${lv.color}"><span class="phase" style="--c:${lv.color}">${lv.name} · Unidad ${i + 1}</span><h1>${esc(meta.title)}</h1><p class="muted">${esc(meta.focus)}</p></header>
+    <div class="theory" style="margin-top:16px">${u.theory.map(sec => `<section><h2>${esc(sec.h)}</h2>${sec.html}</section>`).join('')}</div>
+    ${roleLegend()}
+    <div class="row between" style="margin-top:20px">
+      ${prev ? `<a class="btn" href="#libro/${prev.id}">← ${esc(prev.title)}</a>` : '<span></span>'}
+      <a class="btn primary" href="#unidad/${id}/practica">Practicar esta unidad →</a>
+      ${next ? `<a class="btn" href="#libro/${next.id}">${esc(next.title)} →</a>` : '<span></span>'}
+    </div>`;
+}
+function renderIrregular(main) {
+  main.innerHTML = `
+    <a class="back" href="#libro">← Índice del libro</a>
+    <h1>Verbos irregulares</h1>
+    <p class="muted">Infinitivo, pasado y participio. El participio es el que va con <i>have</i> (present perfect) y con <i>be</i> (pasiva).</p>
+    <input class="search" id="iq" placeholder="Busca un verbo en inglés o en español…" autocomplete="off" autocapitalize="off">
+    <div class="tablewrap"><table class="irr"><thead><tr><th>Infinitivo</th><th>Pasado</th><th>Participio</th><th>Significado</th></tr></thead><tbody id="irows"></tbody></table></div>`;
+  const draw = q => {
+    q = q.trim().toLowerCase();
+    $('#irows').innerHTML = IRREGULAR.filter(r => !q || r.join(' ').toLowerCase().includes(q)).map(r => `<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td class="muted">${r[3]}</td></tr>`).join('');
+  };
+  draw('');
+  $('#iq').oninput = e => draw(e.target.value);
+}

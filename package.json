@@ -1,7 +1,7 @@
 {
   "name": "c1-tracker",
   "productName": "C1 Tracker",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "Tu plan de estudio para el Cambridge C1 Advanced, con calendario, materiales y Jellyfin.",
   "author": "Robert Martí",
   "license": "MIT",
@@ -47,6 +47,7 @@
   "desktopName": "c1-tracker.desktop",
   "dependencies": {
     "@capacitor/app": "^7.1.2",
-    "@capacitor/core": "^7.6.10"
+    "@capacitor/core": "^7.6.10",
+    "@capacitor/preferences": "^7.0.4"
   }
 }
