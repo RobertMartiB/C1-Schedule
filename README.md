@@ -2,7 +2,7 @@
 
 App para pasar de **B1 a C1** (Cambridge C1 Advanced) estudiando desde casa: ruta por niveles con teoría, ejercicios autocorregidos, **lecturas desmontadas** (sujeto, verbo y piezas de cada frase en colores), tarjetas de vocabulario con repetición espaciada, calendario de 3 horas al día y series y películas en inglés desde tu servidor Jellyfin.
 
-**Web y descargas:** https://robertmartib.github.io/c1-tracker · **Versión web/móvil:** https://robertmartib.github.io/c1-tracker/app/
+**Web y descargas:** https://robertmartib.github.io/C1-Schedule · **Versión web/móvil:** https://robertmartib.github.io/C1-Schedule/app/
 
 Disponible para **Android (APK)**, **Linux** (.deb y AppImage), **Windows** (.zip) y como app web instalable.
 
