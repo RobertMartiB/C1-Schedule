@@ -27,12 +27,12 @@ const Vocab = (() => {
   // Botón "+ tarjeta" reutilizable (lecturas, unidades…)
   function addButton(w, es, ex) {
     const on = has(w);
-    return `<button class="addcard ${on ? 'on' : ''}" data-w="${esc(w)}" data-es="${esc(es)}" data-ex="${esc(ex || '')}" ${on ? 'disabled' : ''}>${on ? '✓ en tus tarjetas' : '+ tarjeta'}</button>`;
+    return `<button class="addcard ${on ? 'on' : ''}" data-w="${esc(w)}" data-es="${esc(es)}" data-ex="${esc(ex || '')}" ${on ? 'disabled' : ''}>${on ? `${icon('check')}Guardada` : `${icon('plus')}Guardar`}</button>`;
   }
   function bindAddButtons(root) {
     root.querySelectorAll('.addcard:not([disabled])').forEach(b => b.onclick = () => {
       add(b.dataset.w, b.dataset.es, b.dataset.ex);
-      b.textContent = '✓ en tus tarjetas'; b.classList.add('on'); b.disabled = true;
+      b.innerHTML = `${icon('check')}Guardada`; b.classList.add('on'); b.disabled = true;
     });
   }
 
@@ -51,7 +51,7 @@ const Vocab = (() => {
         <button class="primary" type="submit">Añadir</button>
       </form>
       <h2>Tus tarjetas (${all.length})</h2>
-      ${all.length ? `<ul class="cardlist">${all.map(c => `<li><b>${esc(c.w)}</b><span>${esc(c.es)}</span><span class="box" title="Caja ${c.box}">${'●'.repeat(c.box)}${'○'.repeat(INTERVALS.length - 1 - c.box)}</span><button class="icon small" data-del="${c.id}" aria-label="Borrar ${esc(c.w)}">✕</button></li>`).join('')}</ul>`
+      ${all.length ? `<ul class="cardlist">${all.map(c => `<li><b>${esc(c.w)}</b><span>${esc(c.es)}</span><span class="box" title="Caja ${c.box}">${'●'.repeat(c.box)}${'○'.repeat(INTERVALS.length - 1 - c.box)}</span><button class="icon small" data-del="${c.id}" aria-label="Borrar ${esc(c.w)}">${icon('x')}</button></li>`).join('')}</ul>`
         : '<p class="empty">Aún no tienes tarjetas. Añádelas desde las lecturas con el botón <b>+ tarjeta</b> o con el formulario.</p>'}`;
     drawReview(list);
     $('#addform').onsubmit = e => {
@@ -64,7 +64,7 @@ const Vocab = (() => {
 
   function drawReview(queue) {
     const box = $('#review');
-    if (!queue.length) { box.innerHTML = '<p class="done-msg">✓ No te queda ninguna tarjeta por repasar hoy.</p>'; return; }
+    if (!queue.length) { box.innerHTML = `<p class="done-msg">${icon('check')}No te queda ninguna tarjeta por repasar hoy.</p>`; return; }
     const c = queue[0];
     box.innerHTML = `
       <div class="flash">
@@ -76,7 +76,7 @@ const Vocab = (() => {
       </div>`;
     $('#show').onclick = () => {
       box.querySelector('.back').hidden = false;
-      $('#fbtns').innerHTML = '<button id="no">✗ No la sabía</button><button class="primary" id="yes">✓ La sabía</button>';
+      $('#fbtns').innerHTML = `<button id="no">No la sabía</button><button class="primary" id="yes">${icon('check')}La sabía</button>`;
       $('#no').onclick = () => { Vocab.answer(c.id, false); drawReview([...queue.slice(1), c]); };
       $('#yes').onclick = () => { Vocab.answer(c.id, true); drawReview(queue.slice(1)); };
     };

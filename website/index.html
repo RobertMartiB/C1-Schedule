@@ -101,7 +101,8 @@
     .row ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 11px; }
     .row li { display: flex; gap: 12px; align-items: flex-start; color: #cfd3e3; font-size: .97rem; }
     .row li::before { content: "✓"; flex: none; width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; font-size: .75rem; font-weight: 800; color: var(--accent); background: rgba(123,134,255,.15); margin-top: 1px; }
-    .tagicon { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; font-size: 1.4rem; margin-bottom: 20px; border: 1px solid var(--line2); background: linear-gradient(145deg, rgba(123,134,255,.22), rgba(167,139,250,.08)); }
+    .i { width: 22px; height: 22px; } .tv .i { width: 15px; height: 15px; vertical-align: -3px; margin-right: 4px; } .float .ic .i { width: 19px; height: 19px; color: #a7b0ff; }
+    .tagicon { color: #a7b0ff; width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; font-size: 1.4rem; margin-bottom: 20px; border: 1px solid var(--line2); background: linear-gradient(145deg, rgba(123,134,255,.22), rgba(167,139,250,.08)); }
     .shot { border-radius: 18px; overflow: hidden; border: 1px solid var(--line2); box-shadow: 0 40px 90px -30px rgba(0,0,0,.8); }
     .pair { display: flex; justify-content: center; gap: 18px; }
     .pair .phone { width: min(250px, 42vw); padding: 9px; border-radius: 38px; }
@@ -173,7 +174,7 @@
     <div class="hero">
       <div class="wrap hero-grid">
         <div class="rise">
-          <span class="pill"><b>v2.2</b> Libro de gramática y retos en las series</span>
+          <span class="pill"><b>v2.3</b> Interfaz nueva, más clara y sencilla</span>
           <h1>De B1 a <span class="grad">C1 Advanced</span> estudiando desde casa.</h1>
           <p class="lead">Una ruta por niveles con teoría clara, ejercicios que se corrigen solos y lecturas que te enseñan a desmontar frases largas. Abre la app cada día y sabrás exactamente qué toca.</p>
           <div class="ctas">
@@ -188,8 +189,8 @@
         </div>
         <div style="position:relative" class="rise d2">
           <div class="phone"><img src="img/p-hoy.jpg" alt="Pantalla Hoy de C1 Tracker en un móvil"></div>
-          <div class="float f1"><div class="ic">🔥</div><div><b>12 días seguidos</b><small>Nivel B1+</small></div></div>
-          <div class="float f2"><div class="ic">✅</div><div><b>Unidad 1 completa</b><small>El esqueleto de la frase</small></div></div>
+          <div class="float f1"><div class="ic"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c.8 3.6 4.8 5.3 4.8 10a4.8 4.8 0 0 1-9.6 0c0-2.4 1.3-3.6 2-5.2.9 1.4 1.7 2 2.8 2-.9-2.8-.4-4.7 0-6.8z"/></svg></div><div><b>12 días seguidos</b><small>Nivel B1+</small></div></div>
+          <div class="float f2"><div class="ic"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><div><b>Unidad 1 completa</b><small>El esqueleto de la frase</small></div></div>
         </div>
       </div>
       <div class="wrap">
@@ -208,7 +209,7 @@
 
         <div class="row">
           <div class="text">
-            <div class="tagicon">🏠</div>
+            <div class="tagicon"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1h-5v-6h-5v6h-5a1 1 0 0 1-1-1z"/></svg></div>
             <h3>Cada día sabes exactamente qué hacer</h3>
             <p>La pantalla <b>Hoy</b> reparte tus 3 horas en bloques: la unidad que toca, una lectura, un episodio en inglés y tus tarjetas de vocabulario.</p>
             <ul><li>Tu nivel actual y lo que te falta para pasar al siguiente</li><li>Racha de días y progreso del día de un vistazo</li><li>Descanso los domingos y en festivos</li></ul>
@@ -218,7 +219,7 @@
 
         <div class="row flip">
           <div class="text">
-            <div class="tagicon">🔍</div>
+            <div class="tagicon"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20.5 20.5 16 16"/></svg></div>
             <h3>Aprende a leer frases largas sin perderte</h3>
             <p>La <b>lectura desmontada</b> es el corazón de la app. Tocas una frase, intentas encontrar tú el verbo principal y luego la ves separada en colores:</p>
             <div class="roles"><span style="color:#79a6ff">Sujeto</span><span style="color:#ff7b7b">Verbo</span><span style="color:#4ade80">Complemento</span><span style="color:#c4a5ff">Secundaria</span><span style="color:#fda36b">Conector</span><span style="color:#a5afc4">Extra</span></div>
@@ -229,7 +230,7 @@
 
         <div class="row">
           <div class="text">
-            <div class="tagicon">✍️</div>
+            <div class="tagicon"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19.5 8.5l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></div>
             <h3>Teoría clara y ejercicios que se corrigen solos</h3>
             <p>Cada unidad explica <b>cuándo se usa</b> cada estructura, con ejemplos y los errores típicos de los hispanohablantes. Después, a practicar.</p>
             <ul><li>Elegir opción, rellenar huecos, ordenar palabras y encontrar el verbo</li><li>Cada fallo trae su explicación</li><li>Rehaz solo los ejercicios que fallaste</li></ul>
@@ -239,7 +240,7 @@
 
         <div class="row flip">
           <div class="text">
-            <div class="tagicon">🔄</div>
+            <div class="tagicon"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.6-4.4L3.5 8.5"/><path d="M3.5 4v4.5H8"/><path d="M4 13a8 8 0 0 0 14.6 4.4l1.9-1.9"/><path d="M20.5 20v-4.5H16"/></svg></div>
             <h3>El mismo progreso en el móvil y en el ordenador</h3>
             <p>Si tienes un servidor <b>Jellyfin</b>, la app guarda allí tu progreso y lo comparte entre dispositivos. Y además ves tus series y pelis en inglés dentro de la app.</p>
             <ul><li>Días hechos, unidades, tarjetas y notas sincronizados</li><li>Retos dentro de la película: cada pocos minutos se para y te pide traducir la última frase o resumir lo que ha pasado</li><li>Botón "Ver en Jellyfin" con el episodio que toca hoy</li><li>Sin Jellyfin, exporta e importa tu progreso cuando quieras</li></ul>
@@ -253,10 +254,10 @@
       <div class="wrap">
         <div class="head"><span class="eyebrow">La ruta</span><h2>De B1 a C1, nivel a nivel</h2><p>26 unidades con teoría, práctica y lectura desmontada. Al final, el formato del examen y un simulacro completo cada sábado.</p></div>
         <div class="phases">
-          <div class="phase" style="--c:#4fc28f"><small>Nov – Dic</small><h4>B1+</h4><p>El esqueleto de la frase, relativos, pasiva, tiempos verbales y conectores.</p><div class="tv">🎬 Modern Family</div></div>
-          <div class="phase" style="--c:#7b8fff"><small>Dic – Feb</small><h4>B2</h4><p>Condicionales, wish, deducción, estilo indirecto, phrasal verbs y collocations.</p><div class="tv">🎬 The Crown</div></div>
-          <div class="phase" style="--c:#b08cff"><small>Feb – Mar</small><h4>C1</h4><p>Inversión, cleft sentences, pasiva avanzada, nominalización y hedging.</p><div class="tv">🎬 Succession</div></div>
-          <div class="phase" style="--c:#ff6b9d"><small>Mar – Abr</small><h4>Examen</h4><p>Formato de cada paper del C1 Advanced y simulacros cronometrados.</p><div class="tv">🎬 Sherlock</div></div>
+          <div class="phase" style="--c:#4fc28f"><small>Nov – Dic</small><h4>B1+</h4><p>El esqueleto de la frase, relativos, pasiva, tiempos verbales y conectores.</p><div class="tv"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7.5 4v16M16.5 4v16M3 9h4.5M3 15h4.5M16.5 9H21M16.5 15H21"/></svg> Modern Family</div></div>
+          <div class="phase" style="--c:#7b8fff"><small>Dic – Feb</small><h4>B2</h4><p>Condicionales, wish, deducción, estilo indirecto, phrasal verbs y collocations.</p><div class="tv"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7.5 4v16M16.5 4v16M3 9h4.5M3 15h4.5M16.5 9H21M16.5 15H21"/></svg> The Crown</div></div>
+          <div class="phase" style="--c:#b08cff"><small>Feb – Mar</small><h4>C1</h4><p>Inversión, cleft sentences, pasiva avanzada, nominalización y hedging.</p><div class="tv"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7.5 4v16M16.5 4v16M3 9h4.5M3 15h4.5M16.5 9H21M16.5 15H21"/></svg> Succession</div></div>
+          <div class="phase" style="--c:#ff6b9d"><small>Mar – Abr</small><h4>Examen</h4><p>Formato de cada paper del C1 Advanced y simulacros cronometrados.</p><div class="tv"><svg class="i " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7.5 4v16M16.5 4v16M3 9h4.5M3 15h4.5M16.5 9H21M16.5 15H21"/></svg> Sherlock</div></div>
         </div>
         <div class="shot" style="margin-top:40px"><img loading="lazy" src="img/d-ruta.jpg" alt="La ruta de unidades"></div>
       </div>
@@ -264,27 +265,27 @@
 
     <section id="descargar">
       <div class="wrap">
-        <div class="head"><span class="eyebrow">Descargar</span><h2>Gratis para Android, Linux y Windows</h2><p>Versión 2.2.1. Tu progreso se guarda en tu dispositivo.</p></div>
+        <div class="head"><span class="eyebrow">Descargar</span><h2>Gratis para Android, Linux y Windows</h2><p>Versión 2.3.0. Tu progreso se guarda en tu dispositivo.</p></div>
         <div class="downloads">
           <div class="dl" data-os="android">
             <div class="os" style="color:var(--android)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.14-.52.38.38 0 0 0-.52.14l-1.86 3.22A11.4 11.4 0 0 0 12 8.15c-1.79 0-3.47.4-4.92 1L5.22 5.92a.38.38 0 0 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52ZM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Z"/></svg></div>
             <h3>Android</h3><div class="fmt">.apk · Android 6 o superior · compatible con Moto g05</div>
             <p>Descarga el APK en el móvil, ábrelo y acepta instalar apps de esta fuente. Funciona sin conexión.</p>
-            <a class="btn android get" data-file="C1-Tracker-2.2.1-android.apk" href="#">Descargar APK</a>
+            <a class="btn android get" data-file="C1-Tracker-2.3.0-android.apk" href="#">Descargar APK</a>
             <div class="alt">o <a href="app/" style="color:var(--accent)">úsala desde el navegador</a></div>
           </div>
           <div class="dl" data-os="linux">
             <div class="os"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7l-9-5Z"/><path d="m3 7 9 5 9-5M12 12v10"/></svg></div>
             <h3>Linux</h3><div class="fmt">.deb · Ubuntu, Debian, Mint</div>
             <p>Doble clic para instalar. Aparece en tu menú de aplicaciones como cualquier otra.</p>
-            <a class="btn ghost get" data-file="C1-Tracker-2.2.1-linux-amd64.deb" href="#">Descargar .deb · 97 MB</a>
-            <div class="alt"><a class="get" data-file="C1-Tracker-2.2.1-linux-x86_64.AppImage" href="#" style="color:var(--accent)">AppImage para otras distros</a></div>
+            <a class="btn ghost get" data-file="C1-Tracker-2.3.0-linux-amd64.deb" href="#">Descargar .deb · 97 MB</a>
+            <div class="alt"><a class="get" data-file="C1-Tracker-2.3.0-linux-x86_64.AppImage" href="#" style="color:var(--accent)">AppImage para otras distros</a></div>
           </div>
           <div class="dl" data-os="windows">
             <div class="os"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10.5 4.4v7.1H3V5.5Zm8.5-1.2L21 3v8.5h-9.5V4.3ZM3 12.5h7.5v7.1L3 18.5v-6Zm8.5 0H21V21l-9.5-1.3v-7.2Z"/></svg></div>
             <h3>Windows</h3><div class="fmt">.zip · Windows 10 y 11</div>
             <p>Descomprime la carpeta donde quieras y abre <b>C1 Tracker.exe</b>. No necesita instalación.</p>
-            <a class="btn ghost get" data-file="C1-Tracker-2.2.1-win-x64.zip" href="#">Descargar .zip · 147 MB</a>
+            <a class="btn ghost get" data-file="C1-Tracker-2.3.0-win-x64.zip" href="#">Descargar .zip · 147 MB</a>
           </div>
         </div>
       </div>
@@ -299,7 +300,7 @@
           <details><summary>¿Cómo paso mi progreso del ordenador al móvil?</summary><p>Si tienes Jellyfin, entra con el mismo usuario en la pestaña <b>Series</b> de los dos dispositivos y se sincroniza solo. Si no, en ⚙ Ajustes exporta tu progreso en uno e impórtalo en el otro.</p></details>
           <details><summary>¿Hay libro de gramática?</summary><p>Sí, propio y gratis: toda la teoría de la ruta está en la sección <b>Libro</b> de la app, y también en <a href="libro/C1-Tracker-Libro-B1.pdf">PDF para imprimir</a> (nivel B1+; el B2 y el C1 se irán añadiendo).</p></details>
           <details><summary>¿Es gratis de verdad?</summary><p>Sí. Ni cuentas, ni anuncios, ni suscripciones.</p></details>
-          <details><summary>¿Cómo instalo el .deb desde la terminal?</summary><pre>sudo apt install ./C1-Tracker-2.2.1-linux-amd64.deb</pre></details>
+          <details><summary>¿Cómo instalo el .deb desde la terminal?</summary><pre>sudo apt install ./C1-Tracker-2.3.0-linux-amd64.deb</pre></details>
           <details><summary>Windows dice "Windows protegió tu PC"</summary><p>Sale porque la app no está firmada (firmarla cuesta dinero). Pulsa <b>Más información → Ejecutar de todas formas</b>.</p></details>
           <details><summary>¿Necesito Jellyfin?</summary><p>No. Todo funciona sin él. Solo hace falta para ver series dentro de la app y para sincronizar el progreso entre dispositivos.</p></details>
         </div>

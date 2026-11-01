@@ -19,19 +19,19 @@
   <header class="top">
     <span class="brand"><img src="icon.png" alt="">C1 Tracker</span>
     <nav class="main">
-      <a href="#hoy" data-view="hoy"><span>🏠</span>Hoy</a>
-      <a href="#ruta" data-view="ruta"><span>🧭</span>Ruta</a>
-      <a href="#vocabulario" data-view="vocabulario"><span>📇</span>Palabras</a>
-      <a href="#libro" data-view="libro"><span>📚</span>Libro</a>
-      <a href="#series" data-view="series"><span>🎬</span>Series</a>
-      <a href="#ajustes" data-view="ajustes" aria-label="Ajustes"><span>⚙</span><i>Ajustes</i></a>
+      <a href="#hoy" data-view="hoy"><span data-icon="home"></span>Hoy</a>
+      <a href="#ruta" data-view="ruta"><span data-icon="route"></span>Ruta</a>
+      <a href="#vocabulario" data-view="vocabulario"><span data-icon="cards"></span>Palabras</a>
+      <a href="#libro" data-view="libro"><span data-icon="book"></span>Libro</a>
+      <a href="#series" data-view="series"><span data-icon="film"></span>Series</a>
+      <a href="#ajustes" data-view="ajustes" aria-label="Ajustes"><span data-icon="settings"></span><i>Ajustes</i></a>
     </nav>
   </header>
   <main id="main"></main>
 
   <dialog id="player">
     <div class="phead"><span id="ptitle"></span>
-      <div class="row"><button class="icon pbtn" id="pquiz" aria-label="Reto ahora" title="Reto ahora">🎯</button><button class="icon pbtn" id="pfull" aria-label="Pantalla completa" title="Pantalla completa">⛶</button><button class="icon pbtn" id="pclose" aria-label="Cerrar">✕</button></div>
+      <div class="row"><button class="icon pbtn" id="pquiz" aria-label="Reto ahora" title="Reto ahora"><span data-icon="target"></span></button><button class="icon pbtn" id="pfull" aria-label="Pantalla completa" title="Pantalla completa"><span data-icon="maximize"></span></button><button class="icon pbtn" id="pclose" aria-label="Cerrar"><span data-icon="x"></span></button></div>
     </div>
     <div class="pstage">
       <video id="video" controls playsinline crossorigin="anonymous" controlslist="nofullscreen nodownload"></video>
@@ -41,6 +41,7 @@
   <div id="toast" role="status"></div>
 
   <script src="vendor/hls.min.js"></script>
+  <script src="icons.js"></script>
   <script src="course.js"></script>
   <script src="units/u01.js"></script>
   <script src="units/u02.js"></script>

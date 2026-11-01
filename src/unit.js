@@ -35,9 +35,9 @@ function renderUnit(main, id, tab = 'teoria') {
     return;
   }
   const st = unitStatus(id);
-  const tabs = [['teoria', '📖 Teoría', st.theory], ['practica', `✍️ Práctica ${st.exOk}/${st.exTotal}`, st.exOk === st.exTotal], ['lectura', '🔍 Lectura', st.reading]];
+  const tabs = [['teoria', `${icon('open')}Teoría`, st.theory], ['practica', `${icon('pencil')}Práctica <span class="cnt">${st.exOk}/${st.exTotal}</span>`, st.exOk === st.exTotal], ['lectura', `${icon('search')}Lectura`, st.reading]];
   main.innerHTML = head + `
-    <nav class="tabs">${tabs.map(([t, label, ok]) => `<a href="#unidad/${id}/${t}" class="${t === tab ? 'on' : ''}">${label}${ok ? ' ✓' : ''}</a>`).join('')}</nav>
+    <nav class="tabs">${tabs.map(([t, label, ok]) => `<a href="#unidad/${id}/${t}" class="${t === tab ? 'on' : ''}">${label}${ok ? icon('check', 'ok') : ''}</a>`).join('')}</nav>
     <div id="tabbody"></div>`;
   const body = $('#tabbody');
   if (tab === 'practica') renderPractice(body, id);
@@ -51,7 +51,7 @@ function renderTheory(body, id) {
   body.innerHTML = `
     <div class="theory">${u.theory.map(sec => `<section><h2>${esc(sec.h)}</h2>${sec.html}</section>`).join('')}</div>
     ${roleLegend()}
-    <div class="row end"><button class="primary" id="theoryDone">${progress(id).theory ? '✓ Teoría leída · Ir a la práctica →' : 'He leído la teoría · Ir a la práctica →'}</button></div>`;
+    <div class="row end"><button class="primary" id="theoryDone">${progress(id).theory ? 'Ir a la práctica' : 'He leído la teoría'}${icon('arrow')}</button></div>`;
   $('#theoryDone').onclick = () => { setProgress(id, p => { p.theory = true; }); location.hash = `unidad/${id}/practica`; };
 }
 
@@ -70,7 +70,7 @@ function renderPractice(body, id, onlyWrong = false) {
   body.querySelectorAll('.exitem').forEach(li => bindExercise(li, u.exercises[li.dataset.i], ok => {
     setProgress(id, pr => { (pr.ex ||= {})[li.dataset.i] = ok; });
     const tabsEl = document.querySelector('.tabs a:nth-child(2)'); const st = unitStatus(id);
-    if (tabsEl) tabsEl.textContent = `✍️ Práctica ${st.exOk}/${st.exTotal}${st.exOk === st.exTotal ? ' ✓' : ''}`;
+    if (tabsEl) tabsEl.innerHTML = `${icon('pencil')}Práctica <span class="cnt">${st.exOk}/${st.exTotal}</span>${st.exOk === st.exTotal ? icon('check', 'ok') : ''}`;
   }));
   $('#wrongonly')?.addEventListener('click', () => renderPractice(body, id, true));
   $('#all')?.addEventListener('click', () => renderPractice(body, id, false));
@@ -98,7 +98,7 @@ function bindExercise(li, ex, onResult) {
   const fb = li.querySelector('.fb');
   const show = (ok, extra = '') => {
     fb.hidden = false; fb.className = 'fb ' + (ok ? 'ok' : 'bad');
-    fb.innerHTML = `<b>${ok ? '✓ Correcto.' : '✗ No es correcto.'}</b> ${extra}${ex.why ? ` <span class="why">${esc(ex.why)}</span>` : ''}`;
+    fb.innerHTML = `<b>${ok ? 'Correcto.' : 'No es correcto.'}</b> ${extra}${ex.why ? ` <span class="why">${esc(ex.why)}</span>` : ''}`;
     onResult(ok);
   };
   if (ex.type === 'mcq') {
@@ -174,14 +174,14 @@ function drawBreakdown(box, id, k) {
   const hasV = toks.some(t => t.role === 'V');
   box.innerHTML = `
     <div class="bd">
-      <div class="row between"><b>Frase ${k + 1} de ${r.sentences.length}</b><button class="icon small" id="bdclose" aria-label="Cerrar">✕</button></div>
+      <div class="row between"><b>Frase ${k + 1} de ${r.sentences.length}</b><button class="icon small" id="bdclose" aria-label="Cerrar">${icon('x')}</button></div>
       ${hasV ? `<p class="small muted">Reto: toca el verbo principal (o los verbos principales, si la frase tiene varias partes unidas por <i>and</i>, <i>or</i> o dos puntos).</p>
       <div class="tokens">${toks.map((t, n) => `<button class="tok" data-n="${n}">${esc(t.w)}</button>`).join(' ')}</div>
       <div class="row"><button id="bdcheck">Comprobar</button><button id="bdshow">Ver solución</button></div>` : ''}
       <div id="bdsol" ${hasV ? 'hidden' : ''}>
         <div class="parts">${s.parts.map(([role, text]) => `<span class="part ${ROLE[role].cls}" title="${ROLE[role].name}">${esc(text)}<small>${ROLE[role].name}</small></span>`).join('')}</div>
-        <p class="es">🇪🇸 ${esc(s.es)}</p>
-        <p class="note">💡 ${esc(s.note)}</p>
+        <p class="es"><span class="lab">Traducción</span>${esc(s.es)}</p>
+        <p class="note">${icon('bulb')}<span>${esc(s.note)}</span></p>
         ${s.vocab?.length ? `<ul class="vocab">${s.vocab.map(([w, es]) => `<li><b>${esc(w)}</b> — ${esc(es)} ${Vocab.addButton(w, es, sentenceText(s))}</li>`).join('')}</ul>` : ''}
         <div class="row between">
           ${k > 0 ? `<button id="bdprev">← Frase anterior</button>` : '<span></span>'}
@@ -200,7 +200,7 @@ function drawBreakdown(box, id, k) {
     const sel = new Set([...box.querySelectorAll('.tok.sel')].map(t => Number(t.dataset.n)));
     const want = toks.map((t, n) => (t.role === 'V' ? n : -1)).filter(n => n >= 0);
     const ok = sel.size === want.length && want.every(n => sel.has(n));
-    toast(ok ? '✓ ¡Bien! Ese es el esqueleto.' : 'Casi. Mira la solución: el verbo principal va en rojo.');
+    toast(ok ? '¡Bien! Ese es el esqueleto.' : 'Casi. Mira la solución: el verbo principal va en rojo.');
     reveal();
   });
   $('#bdshow')?.addEventListener('click', reveal);
@@ -225,7 +225,7 @@ function renderBook(main, args) {
       <span class="eyebrow">Tu libro de gramática</span>
       <h1>De B1 a C1</h1>
       <p class="muted">Toda la teoría de la ruta, unidad por unidad. Es lo mismo que estudias cada día en la app: aquí lo tienes ordenado para leer y consultar.</p>
-      <div class="row"><a class="btn primary" href="${BOOK_PDF}" target="_blank" rel="noopener">📄 Libro en PDF para imprimir</a><a class="btn" href="#libro/irregulares">Verbos irregulares</a></div>
+      <div class="row"><a class="btn primary" href="${BOOK_PDF}" target="_blank" rel="noopener">${icon('download')}Libro en PDF</a><a class="btn" href="#libro/irregulares">${icon('layers')}Verbos irregulares</a></div>
     </section>
     <input class="search" id="bq" placeholder="Busca un tema: since, pasiva, although, used to…" autocomplete="off" autocapitalize="off">
     <div id="blist"></div>`;
@@ -236,7 +236,7 @@ function renderBook(main, args) {
       if (!items.length) return '';
       return `<section class="lvl" style="--c:${lv.color}"><header><h2>${lv.name}</h2></header>
         <ol class="units">${items.map(u => `<li><a href="#libro/${u.id}" class="${UNITS[u.id] ? '' : 'pending'}"><span class="n">${u.n}</span>
-          <span class="ut"><b>${esc(u.title)}</b><small>${esc(u.focus)}</small></span><span class="us">${UNITS[u.id] ? '📖' : '<small>pronto</small>'}</span></a></li>`).join('')}</ol></section>`;
+          <span class="ut"><b>${esc(u.title)}</b><small>${esc(u.focus)}</small></span><span class="us">${UNITS[u.id] ? icon('right', 'chev') : '<small>pronto</small>'}</span></a></li>`).join('')}</ol></section>`;
     }).join('') || '<p class="empty">No hay ninguna unidad sobre eso todavía.</p>';
   };
   draw('');

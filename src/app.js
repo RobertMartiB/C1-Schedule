@@ -38,23 +38,25 @@ function dayBlocks(s) {
   const blocks = [];
   const m = d.main;
   if (m.kind === 'unit') {
-    const u = unitById(m.unit), ses = SESSION[m.session];
-    blocks.push({ id: 'main', time: '1 h', icon: ses.icon, text: ses.text(u), detail: ses.detail, link: `#unidad/${u.id}/${ses.tab}`, ready: !!UNITS[u.id] });
+    const u = unitById(m.unit), ses = SESSION[m.session], n = SYLLABUS.indexOf(u) + 1;
+    const ic = { teoria: 'open', practica: 'pencil', lectura: 'search', repaso: 'repeat' }[m.session];
+    blocks.push({ id: 'main', min: 60, icon: ic, kicker: `Unidad ${n} · ${ses.label}`, text: u.title, detail: ses.detail, link: `#unidad/${u.id}/${ses.tab}`, ready: !!UNITS[u.id], cta: m.session === 'teoria' ? 'Empezar la teoría' : m.session === 'practica' ? 'Hacer los ejercicios' : m.session === 'lectura' ? 'Abrir la lectura' : 'Repasar' });
   } else {
-    blocks.push({ id: 'main', time: m.kind === 'mock' ? '3h55' : '1 h', icon: m.kind === 'mock' ? '⏱️' : m.kind === 'leveltest' ? '🏁' : '🔁', text: m.text, detail: m.detail, ready: true });
+    const ic = m.kind === 'mock' ? 'timer' : m.kind === 'leveltest' ? 'trophy' : m.kind === 'exam' ? 'flag' : 'repeat';
+    blocks.push({ id: 'main', min: m.kind === 'mock' ? 235 : 60, icon: ic, kicker: m.kind === 'mock' ? 'Simulacro' : m.kind === 'exam' ? 'Formato del examen' : 'Repaso', text: m.text.replace(/^Formato del examen: /, ''), detail: m.detail, ready: true });
   }
   if (m.kind !== 'mock') {
     const idx = m.kind === 'unit' ? SYLLABUS.findIndex(u => u.id === m.unit) : -1;
     const prev = idx > 0 ? SYLLABUS[idx - 1] : null;
     if (m.kind === 'unit' && m.session !== 'lectura' && prev && UNITS[prev.id])
-      blocks.push({ id: 'read', time: '45 min', icon: '🔍', text: `Lectura en modo reto: ${UNITS[prev.id].reading.title}`, detail: 'Relee la lectura de la unidad anterior. Antes de abrir cada frase, di en voz alta su sujeto y su verbo principal.', link: `#unidad/${prev.id}/lectura`, ready: true });
+      blocks.push({ id: 'read', min: 45, icon: 'search', kicker: 'Lectura en modo reto', text: UNITS[prev.id].reading.title, detail: 'Antes de abrir cada frase, di en voz alta su sujeto y su verbo principal.', link: `#unidad/${prev.id}/lectura`, ready: true, cta: 'Abrir la lectura' });
     else
-      blocks.push({ id: 'read', time: '45 min', icon: '📰', text: 'Lectura libre en inglés', detail: 'Un artículo de tu nivel que te interese (News in Levels, BBC Learning English…). Desmonta solo las frases que no entiendas a la primera.', ext: [['News in Levels', 'https://www.newsinlevels.com'], ['BBC Learning English', 'https://www.bbc.co.uk/learningenglish']], ready: true });
-    if (d.input) blocks.push({ id: 'series', time: '45 min', icon: '🎬', text: `${d.input.name} · T${d.input.season}E${d.input.episode}`, detail: d.input.fresh ? 'Episodio nuevo con audio y subtítulos en inglés. Pausa cuando no entiendas una frase y apunta las expresiones nuevas.' : 'Vuelve a ver 15–20 minutos del episodio, esta vez intentando entenderlo sin mirar los subtítulos.', input: d.input, ready: true });
+      blocks.push({ id: 'read', min: 45, icon: 'news', kicker: 'Lectura libre', text: 'Un artículo de tu nivel', detail: 'Elige algo que te interese. Desmonta solo las frases que no entiendas a la primera.', ext: [['News in Levels', 'https://www.newsinlevels.com'], ['BBC Learning English', 'https://www.bbc.co.uk/learningenglish']], ready: true });
+    if (d.input) blocks.push({ id: 'series', min: 45, icon: 'film', kicker: d.input.fresh ? 'Episodio nuevo' : 'Repaso del episodio', text: `${d.input.name} · T${d.input.season}E${d.input.episode}`, detail: d.input.fresh ? 'Audio y subtítulos en inglés. La película se parará de vez en cuando para proponerte un reto.' : 'Vuelve a ver 15–20 minutos intentando entenderlo sin mirar los subtítulos.', input: d.input, ready: true, cta: 'Ver en Jellyfin' });
   }
   const due = Vocab.due(s).length;
-  blocks.push({ id: 'vocab', time: '30 min', icon: '📇', text: due ? `Tarjetas de vocabulario (${due} por repasar)` : 'Tarjetas de vocabulario', detail: 'Repasa las tarjetas del día y añade las palabras nuevas de hoy.', link: '#vocabulario', ready: true });
-  if (d.writing) blocks.push({ id: 'writing', time: '45 min', icon: '📝', text: 'Writing de la semana', detail: `${d.writing} Cuando lo tengas, pégaselo a Claude para que te lo corrija.`, ready: true });
+  blocks.push({ id: 'vocab', min: 30, icon: 'cards', kicker: 'Vocabulario', text: due ? `${due} tarjeta${due > 1 ? 's' : ''} por repasar` : 'Repasa tus tarjetas', detail: 'Repasa las del día y añade las palabras nuevas que hayas visto hoy.', link: '#vocabulario', ready: true, cta: 'Repasar' });
+  if (d.writing) blocks.push({ id: 'writing', min: 45, icon: 'file', kicker: 'Writing de la semana', text: d.writing.replace(/ \(.*\)\.?$/, ''), detail: `${d.writing} Cuando lo tengas, pégaselo a Claude para que te lo corrija.`, ready: true });
   return blocks;
 }
 
@@ -82,12 +84,16 @@ function streak() {
   return n;
 }
 const currentLevel = s => levelById(SCHEDULE[s]?.level || (s < PLAN_START ? 'b1' : 'exam'));
+const fmtMin = m => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}` : `${m} min`);
+const relDay = (t, s) => { const n = daysBetween(t, s); return n === 1 ? 'Mañana' : n === -1 ? 'Ayer' : n > 0 ? `Dentro de ${n} días` : `Hace ${-n} días`; };
+const userName = () => { const n = store.get().jellyfin?.userName || store.get().lastUser || ''; return n ? n[0].toUpperCase() + n.slice(1) : ''; };
 
 // ---- Navegación ----
 let selectedDate = null;
 function route() {
   const [view, ...args] = (location.hash.slice(1) || 'hoy').split('/');
-  document.querySelectorAll('nav.main a').forEach(a => a.classList.toggle('active', a.dataset.view === view || (view === 'unidad' && a.dataset.view === 'ruta') || (view === 'calendario' && a.dataset.view === 'ruta')));
+  const section = { unidad: 'ruta', calendario: 'ruta' }[view] || view;
+  document.querySelectorAll('nav.main a').forEach(a => a.classList.toggle('active', a.dataset.view === section));
   const main = $('#main');
   const views = { hoy: renderToday, ruta: renderRoute, unidad: (m, a) => renderUnit(m, a[0], a[1]), libro: renderBook, vocabulario: m => Vocab.render(m), calendario: renderCalendar, series: (m, a) => renderSeries(m, a[0]), ajustes: renderSettings };
   (views[view] || renderToday)(main, args);
@@ -103,104 +109,127 @@ function renderToday(main, args) {
   if (s > PLAN_END && !args[0]) s = PLAN_END;
   selectedDate = s;
   const d = SCHEDULE[s], lv = currentLevel(s), blocks = dayBlocks(s);
-  const toStart = daysBetween(t, PLAN_START);
   const lvRange = LEVEL_RANGES[lv.id];
   const lvDays = Object.keys(SCHEDULE).filter(x => x >= lvRange.from && x <= lvRange.to && !SCHEDULE[x].rest);
-  const lvPct = Math.round(lvDays.filter(x => x <= t).length / lvDays.length * 100);
-  const cardsDue = Vocab.due().length;
+  const lvPct = Math.max(0, Math.min(100, Math.round(lvDays.filter(x => x < t).length / lvDays.length * 100)));
+  const toStart = daysBetween(t, PLAN_START);
   const isToday = s === t;
-
-  const doneN = blocks.filter(b => isDone(s, b.id)).length;
-  const dayPct = blocks.length ? Math.round(doneN / blocks.length * 100) : 0;
+  const pending = blocks.filter(b => !isDone(s, b.id));
+  const next = pending[0];
+  const left = pending.reduce((a, b) => a + b.min, 0);
   const hour = new Date().getHours();
   const hello = hour < 6 ? 'Buenas noches' : hour < 14 ? 'Buenos días' : hour < 21 ? 'Buenas tardes' : 'Buenas noches';
+  const name = userName();
+  const dateLabel = longDate(s);
 
   main.innerHTML = `
-    <section class="hero" style="--c:${lv.color}">
-      <div class="hero-top">
-        <div>
-          <span class="eyebrow">${hello} · Nivel actual</span>
-          <div class="lvname">${lv.name}</div>
-          <div class="goal">${esc(lv.goal)}</div>
-        </div>
-        ${blocks.length ? `<div class="dayring" style="--p:${dayPct}"><div><b>${doneN}/${blocks.length}</b><small>hoy</small></div></div>` : ''}
+    <header class="today-head">
+      <div>
+        <p class="overline">${isToday ? `<span class="cap">${dateLabel}</span>` : relDay(t, s)}</p>
+        <h1>${isToday ? `${hello}${name ? `, ${esc(name)}` : ''}` : `<span class="cap">${dateLabel}</span>`}</h1>
       </div>
-      <div class="lvtrack"><div style="width:${Math.max(0, Math.min(100, lvPct))}%"></div></div>
-      <div class="range">${shortDate(lvRange.from)} → ${shortDate(lvRange.to)} · ${Math.max(0, Math.min(100, lvPct))}% del nivel</div>
-      <div class="hero-stats">
-        <div><b>🔥 ${streak()}</b><span>días seguidos</span></div>
-        <div><b>📇 ${cardsDue}</b><span>tarjetas hoy</span></div>
-        <div><b>✓ ${SYLLABUS.filter(u => unitStatus(u.id).pct === 100).length}</b><span>de ${SYLLABUS.length} unidades</span></div>
+      <div class="daynav">
+        <button class="icon" id="prev" aria-label="Día anterior">${icon('left')}</button>
+        ${!isToday ? `<a class="btn small" href="#hoy/${t}">Hoy</a>` : ''}
+        <button class="icon" id="next" aria-label="Día siguiente">${icon('right')}</button>
       </div>
-    </section>
-    ${toStart > 0 ? `<div class="banner">🚀 Empiezas el <b>${longDate(PLAN_START)}</b> (en ${toStart} día${toStart > 1 ? 's' : ''}). Puedes ir abriendo la unidad 1 si quieres adelantar.</div>` : ''}
+    </header>
 
-    <div class="dayhead">
-      <button class="icon" id="prev" aria-label="Día anterior">‹</button>
-      <div><h1>${isToday ? 'Hoy · ' : ''}${longDate(s)}</h1>${d?.level ? `<span class="phase" style="--c:${lv.color}">${lv.name}</span>` : ''}</div>
-      <button class="icon" id="next" aria-label="Día siguiente">›</button>
+    <div class="chips">
+      <a class="chip-stat" href="#ruta" style="--c:${lv.color}"><span class="dot"></span>Nivel ${lv.name}<b>${lvPct}%</b></a>
+      <span class="chip-stat">${icon('flame')}Racha<b>${streak()} d</b></span>
+      <a class="chip-stat" href="#vocabulario">${icon('cards')}Tarjetas<b>${Vocab.due().length}</b></a>
     </div>
-    ${!isToday ? `<a class="back" href="#hoy/${t}">← Volver a hoy</a>` : ''}
 
-    ${!d ? '<p class="empty">Este día está fuera del plan.</p>' : d.rest ? `<div class="restday"><div class="big">☕</div><b>${esc(d.rest)}</b><p class="muted">Descansar también es parte del plan. Si te apetece, mira algo en inglés sin presión.</p></div>` : `
-    <p class="muted small daynote">Unas 3 horas en bloques. Haz el bloque principal cuando tengas la cabeza más fresca.</p>
-    <ul class="tasks">
-      ${blocks.map(b => `<li class="task ${isDone(s, b.id) ? 'done' : ''}">
-        <label>
-          <input type="checkbox" data-id="${b.id}" ${isDone(s, b.id) ? 'checked' : ''}>
-          <span class="ico">${b.icon}</span>
-          <span class="body">
-            <span class="title">${esc(b.text)} <span class="time">${b.time}</span></span>
-            <span class="detail">${esc(b.detail)}</span>
-            ${b.link ? (b.ready ? `<a class="tag link" href="${b.link}">Abrir →</a>` : `<span class="tag">Unidad en preparación: pídele a Claude que la prepare</span>`) : ''}
-            ${b.ext ? b.ext.map(([n, u]) => `<a class="tag link" href="${u}" target="_blank" rel="noopener">${n} ↗</a>`).join(' ') : ''}
-            ${b.input ? `<button class="tag link watch">▶ Ver en Jellyfin</button>` : ''}
-          </span>
-        </label>
-      </li>`).join('')}
-    </ul>
-    <label class="notes">
-      <span>Notas del día (errores, palabras nuevas, dudas para Claude…)</span>
-      <textarea id="note" rows="3">${esc(store.get().notes[s] || '')}</textarea>
-    </label>`}`;
+    ${toStart > 0 && isToday ? `<div class="notice">${icon('info')}<span>Tu plan empieza el <b>${longDate(PLAN_START)}</b>. Puedes ir mirando la unidad 1.</span></div>` : ''}
+
+    ${!d ? `<div class="empty-card">${icon('calendar')}<p>Este día está fuera del plan.</p></div>`
+      : d.rest ? `<div class="empty-card">${icon('coffee')}<h2>${esc(d.rest.split(':')[0])}</h2><p>Hoy toca descansar. Si te apetece, mira algo en inglés sin presión.</p></div>`
+      : `
+    ${next ? `
+    <section class="next" style="--c:${lv.color}">
+      <div class="next-top"><span class="overline">Ahora toca</span><span class="pill">${icon('clock')}${fmtMin(next.min)}</span></div>
+      <div class="next-main">
+        <span class="next-ic">${icon(next.icon)}</span>
+        <div><span class="kicker">${esc(next.kicker)}</span><h2>${esc(next.text)}</h2></div>
+      </div>
+      <p class="next-detail">${esc(next.detail)}</p>
+      <div class="row">
+        ${next.input ? `<button class="primary watch" data-act="watch">${icon('play')}${next.cta}</button>`
+          : next.link ? (next.ready ? `<a class="btn primary" href="${next.link}">${next.cta || 'Abrir'}${icon('arrow')}</a>` : `<span class="muted small">Esta unidad aún no está lista: pídele a Claude que la prepare.</span>`)
+          : next.ext ? next.ext.map(([n, u], i) => `<a class="btn ${i ? '' : 'primary'}" href="${u}" target="_blank" rel="noopener">${n}</a>`).join('') : ''}
+        <button class="ghostbtn" data-done="${next.id}">${icon('check')}Marcar como hecho</button>
+      </div>
+    </section>` : `
+    <section class="next done-all">${icon('trophy')}<div><h2>Día completado</h2><p class="muted">Buen trabajo. Mañana más.</p></div></section>`}
+
+    <section class="plan">
+      <div class="plan-head"><h3>Plan del día</h3><span class="muted small">${blocks.length - pending.length} de ${blocks.length}${left ? ` · quedan ${fmtMin(left)}` : ''}</span></div>
+      <div class="segs">${blocks.map(b => `<i class="${isDone(s, b.id) ? 'on' : ''}"></i>`).join('')}</div>
+      <ul class="rows">
+        ${blocks.map(b => `<li class="${isDone(s, b.id) ? 'done' : ''} ${b === next ? 'current' : ''}">
+          <button class="tick" data-done="${b.id}" aria-label="${isDone(s, b.id) ? 'Desmarcar' : 'Marcar como hecho'}">${icon('check')}</button>
+          <button class="rowmain" data-open="${b.id}">
+            <span class="ric">${icon(b.icon)}</span>
+            <span class="rt"><small>${esc(b.kicker)}</small><b>${esc(b.text)}</b></span>
+            <span class="rmin">${fmtMin(b.min)}</span>
+          </button>
+        </li>`).join('')}
+      </ul>
+    </section>
+
+    <details class="notes-box" ${store.get().notes[s] ? 'open' : ''}>
+      <summary>${icon('pencil')}Notas del día</summary>
+      <textarea id="note" rows="4" placeholder="Errores, palabras nuevas, dudas para Claude…">${esc(store.get().notes[s] || '')}</textarea>
+    </details>`}`;
 
   $('#prev').onclick = () => { location.hash = `hoy/${addDays(s, -1)}`; };
   $('#next').onclick = () => { location.hash = `hoy/${addDays(s, 1)}`; };
-  main.querySelectorAll('.tasks input').forEach(cb => cb.addEventListener('change', () => { toggleDone(s, cb.dataset.id); renderToday(main, [s]); }));
-  main.querySelectorAll('.tasks a, .tasks button').forEach(a => a.addEventListener('click', e => e.stopPropagation()));
-  $('#note')?.addEventListener('input', e => store.set(st => { if (e.target.value.trim()) st.notes[s] = e.target.value; else delete st.notes[s]; }));
-  main.querySelector('.watch')?.addEventListener('click', async e => {
-    e.preventDefault();
-    if (!Jellyfin.connected()) { location.hash = 'series'; return; }
-    const btn = e.currentTarget, inp = d.input; btn.disabled = true; btn.textContent = 'Buscando…';
-    try {
-      const ep = await Jellyfin.findEpisode(inp.name, inp.season, inp.episode);
-      if (!ep) toast(`No encuentro "${inp.name}" T${inp.season}E${inp.episode} en tu Jellyfin.`); else openPlayer(ep);
-    } catch (err) { toast(err.message); }
-    finally { btn.disabled = false; btn.textContent = '▶ Ver en Jellyfin'; }
+  main.querySelectorAll('[data-done]').forEach(b => b.onclick = () => { toggleDone(s, b.dataset.done); renderToday(main, [s]); });
+  main.querySelectorAll('[data-open]').forEach(b => b.onclick = () => {
+    const blk = blocks.find(x => x.id === b.dataset.open);
+    if (blk.input) return watchToday(blk.input, b);
+    if (blk.link && blk.ready) location.hash = blk.link.slice(1);
+    else if (blk.ext) window.open(blk.ext[0][1], '_blank', 'noopener');
+    else toast(blk.detail);
   });
+  $('#note')?.addEventListener('input', e => store.set(st => { if (e.target.value.trim()) st.notes[s] = e.target.value; else delete st.notes[s]; }));
+  main.querySelector('[data-act="watch"]')?.addEventListener('click', e => watchToday(d.input, e.currentTarget));
+}
+
+async function watchToday(inp, btn) {
+  if (!Jellyfin.connected()) { toast('Conecta tu Jellyfin primero.'); location.hash = 'series'; return; }
+  const old = btn.innerHTML; btn.disabled = true; btn.textContent = 'Buscando…';
+  try {
+    const ep = await Jellyfin.findEpisode(inp.name, inp.season, inp.episode);
+    if (!ep) toast(`No encuentro "${inp.name}" T${inp.season}E${inp.episode} en tu Jellyfin.`); else openPlayer(ep);
+  } catch (err) { toast(err.message); }
+  finally { btn.disabled = false; btn.innerHTML = old; }
 }
 
 // ---- RUTA ----
 function renderRoute(main) {
   const t = today();
+  const curUnit = SCHEDULE[t]?.main?.unit || (t < PLAN_START ? 'u01' : null);
   main.innerHTML = `
-    <div class="row between"><h1>Tu ruta</h1><a class="btn" href="#calendario">📅 Calendario</a></div>
-    <p class="muted">De B1 a C1 con 3 horas al día. Cada unidad tiene teoría, práctica y una lectura desmontada.</p>
+    <header class="page-head"><div><h1>Tu ruta</h1><p class="muted">De B1 a C1, unidad a unidad.</p></div><a class="btn small" href="#calendario">${icon('calendar')}Calendario</a></header>
     ${LEVELS.map(lv => {
       const r = LEVEL_RANGES[lv.id], units = SYLLABUS.filter(u => u.level === lv.id);
-      const now = t >= r.from && t <= r.to;
+      const now = (t >= r.from && t <= r.to) || (t < PLAN_START && lv.id === 'b1');
+      const done = units.filter(u => unitStatus(u.id).pct === 100).length;
       return `<section class="lvl ${now ? 'now' : ''}" style="--c:${lv.color}">
-        <header><h2>${lv.name}${now ? '<span class="nowtag">Ahora</span>' : ''}</h2><span class="muted small">${shortDate(r.from)} → ${shortDate(r.to)} · 🎬 ${esc(lv.series.name)} T${lv.series.season}</span></header>
-        <p class="muted">${esc(lv.goal)}</p>
+        <header>
+          <div><h2>${lv.name}${now ? '<span class="nowtag">Ahora</span>' : ''}</h2><p class="muted small">${esc(lv.goal)}</p></div>
+          <div class="lvmeta"><span>${shortDate(r.from)} – ${shortDate(r.to)}</span>${units.length ? `<b>${done}/${units.length}</b>` : ''}</div>
+        </header>
         ${units.length ? `<ol class="units">${units.map(u => {
           const st = unitStatus(u.id), n = SYLLABUS.indexOf(u) + 1;
-          return `<li><a href="#unidad/${u.id}/teoria" class="${st.ready ? '' : 'pending'}">
-            <span class="n">${n}</span>
+          return `<li><a href="#unidad/${u.id}/teoria" class="${st.ready ? '' : 'pending'} ${u.id === curUnit ? 'cur' : ''}">
+            <span class="n ${st.pct === 100 ? 'ok' : ''}">${st.pct === 100 ? icon('check') : n}</span>
             <span class="ut"><b>${esc(u.title)}</b><small>${esc(u.focus)}</small></span>
-            <span class="us">${st.ready ? `<span class="ring" style="--p:${st.pct}">${st.pct}%</span>` : `<small>${UNIT_START[u.id] ? shortDate(UNIT_START[u.id]) : ''}</small>`}</span>
+            <span class="us">${!st.ready ? `<small>${UNIT_START[u.id] ? shortDate(UNIT_START[u.id]) : ''}</small>` : st.pct && st.pct < 100 ? `<span class="ring" style="--p:${st.pct}">${st.pct}</span>` : icon('right', 'chev')}</span>
           </a></li>`;
-        }).join('')}</ol>` : '<p>Formato de cada paper del examen, writings cronometrados y un simulacro completo cada sábado.</p>'}
+        }).join('')}</ol>` : `<p class="muted small">Formato de cada paper, writings cronometrados y un simulacro completo cada sábado.</p>`}
       </section>`;
     }).join('')}`;
 }
@@ -246,7 +275,7 @@ async function renderSeries(main, arg) {
         <label>Contraseña<input name="pass" type="password" autocomplete="current-password"></label>
         <button class="primary" type="submit">Conectar</button>
         <p class="muted small">La contraseña no se guarda: solo se guarda la sesión que te da el servidor.</p>
-        ${location.protocol === 'https:' ? '<p class="muted small">⚠️ Desde la versión web solo funciona si tu Jellyfin usa <b>https</b>. Si es <b>http</b>, usa la app de escritorio.</p>' : ''}
+        ${location.protocol === 'https:' ? '<p class="muted small">Desde la versión web solo funciona si tu Jellyfin usa <b>https</b>. Si es <b>http</b>, usa la app de escritorio.</p>' : ''}
         <p class="error" id="err"></p>
       </form>`;
     $('#login').addEventListener('submit', async e => {
@@ -269,8 +298,8 @@ async function renderSeries(main, arg) {
     <div class="sethead"><h1>Series y películas</h1>
       <span class="muted small">${esc(c.userName)} @ ${esc(c.server)} · <a href="#" id="logout">Desconectar</a></span></div>
     <div class="seasons kindtabs">
-      <button data-kind="series" class="${libraryKind === 'series' ? 'on' : ''}">📺 Series</button>
-      <button data-kind="movies" class="${libraryKind === 'movies' ? 'on' : ''}">🎬 Películas</button>
+      <button data-kind="series" class="${libraryKind === 'series' ? 'on' : ''}">Series</button>
+      <button data-kind="movies" class="${libraryKind === 'movies' ? 'on' : ''}">Películas</button>
     </div>
     <input class="search" id="q" placeholder="Buscar…">
     <div id="list"><p class="muted">Cargando…</p></div>`;
@@ -289,7 +318,7 @@ async function renderSeries(main, arg) {
     const inPlan = movies ? [] : items.filter(s => planNames.some(n => s.Name.toLowerCase().includes(n)));
     const card = s => `<a class="poster" ${movies ? `href="#" data-movie="${s.Id}"` : `href="#series/${s.Id}"`}>
       <img loading="lazy" src="${Jellyfin.imageUrl(s.Id, 360)}" alt="" onerror="this.style.visibility='hidden'">
-      <span>${esc(s.Name)}</span><small>${s.ProductionYear || ''}${s.UserData?.Played ? ' · ✓ vista' : ''}</small></a>`;
+      <span>${esc(s.Name)}</span><small>${s.ProductionYear || ''}${s.UserData?.Played ? ' · vista' : ''}</small></a>`;
     $('#list').innerHTML = `
       ${inPlan.length && !q ? `<h2>Del plan</h2><div class="posters">${inPlan.map(card).join('')}</div><h2>Todas</h2>` : ''}
       ${items.length ? `<div class="posters">${items.map(card).join('')}</div>` : `<p class="muted">No hay ${movies ? 'películas' : 'series'} que coincidan.</p>`}`;
@@ -320,7 +349,7 @@ async function renderShow(main, seriesId) {
       const eps = await Jellyfin.episodes(seriesId, seasonId);
       $('#eps').innerHTML = eps.map(e => `<li data-id="${e.Id}">
         <img loading="lazy" src="${Jellyfin.imageUrl(e.Id, 180)}" alt="" onerror="this.style.visibility='hidden'">
-        <div><b>${e.IndexNumber ?? ''}. ${esc(e.Name)}</b> ${e.UserData?.Played ? '<span class="seen">✓ visto</span>' : ''}
+        <div><b>${e.IndexNumber ?? ''}. ${esc(e.Name)}</b> ${e.UserData?.Played ? `<span class="seen">${icon('check')}visto</span>` : ''}
         <p>${esc((e.Overview || '').slice(0, 200))}</p></div></li>`).join('');
       $('#eps').querySelectorAll('li').forEach((li, i) => li.addEventListener('click', () => openPlayer(eps[i])));
     };
@@ -411,15 +440,15 @@ function showQuiz() {
   box.hidden = false;
   box.innerHTML = translate ? `
     <div class="qcard">
-      <span class="eyebrow">🎯 Reto · ${clock(t)} · Traduce la última frase</span>
+      <span class="eyebrow">${icon('translate')}Reto · ${clock(t)} · Traduce la última frase</span>
       ${cues.length > 1 ? `<p class="ctx">${esc(cueText(cues[0]))}</p>` : ''}
       <p class="line">${esc(cueText(target))}</p>
       <textarea id="qmine" rows="2" placeholder="Tu traducción al español…"></textarea>
       <div id="qres" hidden></div>
-      <div class="row"><button class="primary" id="qcheck">Comprobar</button><button id="qreplay">↺ Volver a oírla</button><button id="qskip">Saltar</button></div>
+      <div class="row"><button class="primary" id="qcheck">Comprobar</button><button id="qreplay">${icon('volume')}Volver a oírla</button><button id="qskip">Saltar</button></div>
     </div>` : `
     <div class="qcard">
-      <span class="eyebrow">🎯 Reto · ${clock(t)} · ¿Qué ha pasado hasta ahora?</span>
+      <span class="eyebrow">${icon('sparkle')}Reto · ${clock(t)} · ¿Qué ha pasado hasta ahora?</span>
       <p>Resume <b>en inglés</b>, en 2 o 3 frases, lo que ha pasado desde el último reto. No hace falta que sea perfecto.</p>
       <p class="tips">Te pueden ayudar: <i>So far… · At the beginning… · Then… · It seems that… · I think that…</i></p>
       <textarea id="qmine" rows="4" placeholder="So far, …"></textarea>
@@ -428,7 +457,7 @@ function showQuiz() {
   const resume = () => { box.hidden = true; box.innerHTML = ''; video.play().catch(() => {}); };
   const log = entry => store.set(s => {
     (s.watchLog ||= []).push({ date: today(), title: playing.title, at: clock(t), ...entry });
-    const line = entry.type === 'traducir' ? `🎬 ${playing.title} (${clock(t)}): "${entry.en}" → ${entry.mine}` : `🎬 ${playing.title} (${clock(t)}) Resumen: ${entry.mine}`;
+    const line = entry.type === 'traducir' ? `[${playing.title} · ${clock(t)}] "${entry.en}" → ${entry.mine}` : `[${playing.title} · ${clock(t)}] Resumen: ${entry.mine}`;
     s.notes[today()] = (s.notes[today()] ? s.notes[today()] + '\n' : '') + line;
   });
   $('#qskip').onclick = resume;
@@ -439,12 +468,12 @@ function showQuiz() {
       const es = playing.esIdx >= 0 ? cueAt(playing.esIdx, target.startTime, target.endTime) : '';
       const res = $('#qres'); res.hidden = false;
       res.innerHTML = es
-        ? `<p class="es">🇪🇸 Subtítulo en español: <b>${esc(es)}</b></p><p class="muted small">Los subtítulos no son una traducción literal: si tu frase dice lo mismo con otras palabras, está bien.</p>`
+        ? `<p class="es"><span class="lab">Subtítulo en español</span> <b>${esc(es)}</b></p><p class="muted small">Los subtítulos no son una traducción literal: si tu frase dice lo mismo con otras palabras, está bien.</p>`
         : `<p class="muted small">Este episodio no tiene subtítulos en español para comparar. Tu traducción se guarda en las notas del día: pásasela a Claude y te la corrige.</p>`;
       res.innerHTML += `<div class="addword"><input id="qw" placeholder="Palabra o expresión nueva"><input id="qwes" placeholder="Significado"><button id="qadd">+ tarjeta</button></div>`;
       $('#qadd').onclick = () => { if (Vocab.add($('#qw').value, $('#qwes').value, cueText(target))) { toast('Tarjeta añadida'); $('#qw').value = $('#qwes').value = ''; } else toast('Escribe la palabra y su significado (o ya la tienes).'); };
       log({ type: 'traducir', en: cueText(target), es, mine });
-      $('#qcheck').textContent = 'Seguir viendo ▶'; $('#qcheck').onclick = resume;
+      $('#qcheck').innerHTML = `Seguir viendo${icon('play')}`; $('#qcheck').onclick = resume;
     };
   } else {
     $('#qsave').onclick = () => { const mine = $('#qmine').value.trim(); if (mine) { log({ type: 'resumen', mine }); toast('Resumen guardado en tus notas de hoy'); } resume(); };
@@ -537,4 +566,5 @@ if (CapApp) CapApp.addListener('backButton', () => {
   if (location.hash && !/^#(hoy)?$/.test(location.hash)) history.back(); else CapApp.exitApp();
 });
 $('#player').addEventListener('close', () => { if (hls || $('#video').src) closePlayer(); });
+document.querySelectorAll('[data-icon]').forEach(el => { el.outerHTML = icon(el.dataset.icon); });
 route();
