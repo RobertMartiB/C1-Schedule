@@ -58,25 +58,26 @@ Al empezar un curso, Speakly te pregunta cómo quieres estudiar. Se puede cambia
 
 ### Por niveles (recomendada)
 
-Cada día haces **unos pocos módulos** (1, 2, 3 o 5, de unos 20 minutos cada uno) y avanzas por un recorrido, sin fechas ni días atrasados. Si un día te sobra tiempo, puedes hacer un módulo más.
+Cada día tienes **el mismo día completo que en el calendario** (un módulo de la unidad, una lectura, un episodio de la serie o película y tus tarjetas), ajustado al tiempo que elijas: 30 minutos, 1, 2 o 3 horas. La diferencia es que **no hay fechas**: si un día no estudias, al día siguiente sigues donde lo dejaste, sin días atrasados. Si te sobra tiempo, puedes hacer un módulo más.
 
-- La pantalla **Hoy** muestra tu objetivo del día con los módulos que tocan y el repaso de tarjetas.
+- La pantalla **Hoy** muestra tu día: el módulo que toca, la lectura, el episodio y el repaso de tarjetas.
 - La **Ruta** se convierte en un recorrido: cada unidad tiene sus tres módulos unidos por una línea. Los hechos salen en verde, el actual destacado con el progreso de la unidad y los siguientes con candado.
 - Al tocar un módulo ves qué vas a hacer, cuánto se tarda y un botón para empezar.
+- El episodio de la serie avanza a la vez que tú avanzas por el nivel.
 - Al final de cada nivel hay un **test de nivel** que haces con Claude.
 
 <table>
   <tr>
     <td width="62%"><img src="docs/capturas/camino.jpg" alt="Recorrido por niveles"></td>
-    <td><img src="docs/capturas/hoy-niveles.jpg" alt="Objetivo de hoy en el modo por niveles"></td>
+    <td><img src="docs/capturas/hoy-niveles.jpg" alt="Hoy en el modo por niveles"></td>
   </tr>
 </table>
 
 ### Plan con calendario
 
-Un plan día a día con fechas para cada nivel. Tú eliges:
+El mismo día completo, pero con **fechas** para cada nivel. Tú eliges:
 
-- **Tiempo al día**: 30 minutos, 1, 2 o 3 horas. Los bloques del día se ajustan a ese tiempo; con poco tiempo se quedan los esenciales (la unidad y el vocabulario).
+- **Tiempo al día**: 30 minutos, 1, 2 o 3 horas. Los bloques se reparten en proporción; con 30 minutos se quedan la unidad, la serie y las tarjetas.
 - **Días a la semana**: 5 (descanso el fin de semana), 6 (descanso el domingo) o 7.
 
 El calendario se recalcula solo y te enseña qué días llevas hechos, a medias o atrasados.

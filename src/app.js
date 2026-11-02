@@ -67,16 +67,23 @@ const blockDone = (s, b) => b.auto || isDone(s, b.id);
 function fitToTime(blocks) {
   if (!PACE.chosen) return blocks;
   const budget = PACE.minutes;
-  const keep = budget <= 30 ? ['main', 'ahead', 'vocab'] : budget <= 60 ? ['main', 'ahead', 'read', 'vocab'] : budget < 120 ? ['main', 'ahead', 'read', 'series', 'vocab'] : null;
-  const out = keep ? blocks.filter(b => keep.includes(b.id)) : blocks;
+  // La serie o película se queda siempre (aunque sea un rato corto); con 30 minutos se quita la lectura
+  const keep = budget <= 30 ? ['main', 'ahead', 'series', 'vocab'] : budget < 120 ? ['main', 'ahead', 'read', 'series', 'vocab'] : null;
+  const isModule = b => /^m\d+$/.test(b.id); // módulos del modo por niveles (m0, m1…)
+  const out = keep ? blocks.filter(b => isModule(b) || keep.includes(b.id)) : blocks;
   if (out.some(b => b.min > 200)) return out; // simulacro: dura lo que dura
-  const base = out.filter(b => !b.extra && b.id !== 'writing').reduce((a, b) => a + b.min, 0);
+  const base = out.filter(b => !b.extra && b.id !== 'writing' && !(isModule(b) && b.id !== 'm0')).reduce((a, b) => a + b.min, 0);
   const k = budget / base;
-  return out.map(b => ({ ...b, min: Math.max(5, Math.round(b.min * k / 5) * 5) }));
+  const fitted = out.map(b => ({ ...b, min: Math.max(5, Math.round(b.min * k / 5) * 5) }));
+  // Lo que sobra o falta por redondear va al bloque principal, para que el total sea justo el tiempo elegido
+  const core = fitted.filter(b => !b.extra && b.id !== 'writing' && !(isModule(b) && b.id !== 'm0'));
+  const first = core.find(b => b.id === 'main' || b.id === 'm0');
+  if (first) first.min = Math.max(5, first.min + budget - core.reduce((a, b) => a + b.min, 0));
+  return fitted;
 }
 
-// ---- Modo por niveles: unos módulos al día, sin fechas, avanzando a tu ritmo ----
-// Un módulo es una parte de una unidad: teoría, práctica o lectura.
+// ---- Modo por niveles: el mismo día que el calendario (módulo, lectura, serie y tarjetas), pero sin fechas ----
+// Un módulo es una parte de una unidad: teoría, práctica o lectura. Si un día no estudias, sigues donde lo dejaste.
 function pendingSteps(n) {
   const out = [];
   for (const u of SYLLABUS) {
@@ -90,16 +97,24 @@ function pendingSteps(n) {
 }
 // Los módulos de cada día se fijan la primera vez que abres Hoy ese día
 function dailySteps(s) {
-  if (!store.get().daily?.[s]?.length && s === today()) store.set(st => { st.daily = st.daily || {}; st.daily[s] = pendingSteps(PACE.goal); });
+  if (!store.get().daily?.[s]?.length && s === today()) store.set(st => { st.daily = st.daily || {}; st.daily[s] = pendingSteps(1); });
   return store.get().daily?.[s] || [];
 }
+// Episodio de la serie del nivel según lo que llevas hecho del nivel (avanza contigo, no con el calendario)
+function levelInput(unitId) {
+  const lv = levelById(unitById(unitId).level);
+  if (!lv?.series) return null;
+  const units = SYLLABUS.filter(u => u.level === lv.id);
+  const done = units.reduce((a, u) => a + MODULES.filter(([ses]) => sessionDone(u.id, ses)).length, 0);
+  const episode = Math.min(lv.series.episodes, Math.floor(done * lv.series.episodes / (units.length * 3)) + 1);
+  return { ...lv.series, episode, fresh: true };
+}
 function levelBlocks(s) {
-  const blocks = dailySteps(s).map((p, i) => ({ ...unitBlock(p.unit, p.session, 'm' + i), min: 20 }));
-  if (blocks.length) {
-    const due = Vocab.due(s).length;
-    blocks.push({ id: 'vocab', min: 10, icon: 'cards', kicker: 'Vocabulario', text: due ? `${due} tarjeta${due > 1 ? 's' : ''} por repasar` : 'Repasa tus tarjetas', detail: 'Repasa las del día y añade las palabras nuevas que hayas visto hoy.', link: '#vocabulario', ready: true, cta: 'Repasar' });
-  }
-  return blocks;
+  const steps = dailySteps(s);
+  if (!steps.length) return [];
+  const blocks = steps.map((p, i) => ({ ...unitBlock(p.unit, p.session, 'm' + i), extra: i > 0 || undefined }));
+  blocks.push(...companionBlocks(steps[0].unit, steps[0].session, levelInput(steps[0].unit)), vocabBlock(s));
+  return fitToTime(blocks);
 }
 function levelNow() {
   const nx = pendingSteps(1)[0];
@@ -110,6 +125,25 @@ function levelNow() {
 function levelPct(lv) {
   const units = SYLLABUS.filter(u => u.level === lv.id);
   return units.length ? Math.round(units.filter(u => unitStatus(u.id).pct === 100).length / units.length * 100) : 0;
+}
+
+// Lo que acompaña al módulo del día en los dos modos: una lectura y algo para escuchar (serie o película)
+function companionBlocks(unitId, session, input) {
+  const out = [];
+  const idx = unitId ? SYLLABUS.findIndex(u => u.id === unitId) : -1;
+  const prev = idx > 0 ? SYLLABUS[idx - 1] : null;
+  if (unitId && session !== 'lectura' && prev && UNITS[prev.id])
+    out.push({ id: 'read', min: MIN.read, icon: 'search', kicker: 'Lectura en modo reto', text: UNITS[prev.id].reading.title, detail: 'Antes de abrir cada frase, di en voz alta su sujeto y su verbo principal.', link: `#unidad/${prev.id}/lectura`, ready: true, cta: 'Abrir la lectura' });
+  else
+    out.push({ id: 'read', min: MIN.read, icon: 'news', kicker: 'Lectura libre', text: COURSE_DEF.readingTitle || 'Un artículo de tu nivel', detail: COURSE_DEF.readingDetail || 'Elige algo que te interese. Desmonta solo las frases que no entiendas a la primera.', ext: COURSE_DEF.readingLinks, ready: true });
+  if (input) out.push({ id: 'series', min: MIN.series, icon: 'film', kicker: input.fresh ? 'Episodio nuevo' : 'Repaso del episodio', text: `${input.name} · T${input.season}E${input.episode}`, detail: input.fresh ? `Audio y subtítulos ${ACTIVE_COURSE.inLang}. La película se parará de vez en cuando para proponerte un reto.` : 'Vuelve a ver 15–20 minutos intentando entenderlo sin mirar los subtítulos.', input, ready: true, cta: 'Ver en Jellyfin' });
+  else if (COURSE_DEF.seriesHint) out.push({ id: 'series', min: MIN.series, icon: 'film', kicker: 'Escucha', text: COURSE_DEF.seriesHint.text, detail: COURSE_DEF.seriesHint.detail, link: '#series', ready: true, cta: 'Abrir Series' });
+  else out.push({ id: 'series', min: MIN.series, icon: 'film', kicker: 'Escucha', text: `Una serie o película ${ACTIVE_COURSE.inLang}`, detail: `Algo que te guste, con audio y subtítulos ${ACTIVE_COURSE.inLang}. Apunta 3 expresiones que oigas varias veces.`, link: '#series', ready: true, cta: 'Abrir Series' });
+  return out;
+}
+function vocabBlock(s) {
+  const due = Vocab.due(s).length;
+  return { id: 'vocab', min: MIN.vocab, icon: 'cards', kicker: 'Vocabulario', text: due ? `${due} tarjeta${due > 1 ? 's' : ''} por repasar` : 'Repasa tus tarjetas', detail: 'Repasa las del día y añade las palabras nuevas que hayas visto hoy.', link: '#vocabulario', ready: true, cta: 'Repasar' };
 }
 
 function dayBlocks(s) {
@@ -129,18 +163,8 @@ function dayBlocks(s) {
     const ic = m.kind === 'mock' ? 'timer' : m.kind === 'leveltest' ? 'trophy' : m.kind === 'exam' ? 'flag' : 'repeat';
     blocks.push({ id: 'main', min: m.kind === 'mock' ? 235 : MIN.main, icon: ic, kicker: m.kind === 'mock' ? 'Simulacro' : m.kind === 'exam' ? 'Formato del examen' : 'Repaso', text: m.text.replace(/^Formato del examen: /, ''), detail: m.detail, ready: true });
   }
-  if (m.kind !== 'mock') {
-    const idx = m.kind === 'unit' ? SYLLABUS.findIndex(u => u.id === m.unit) : -1;
-    const prev = idx > 0 ? SYLLABUS[idx - 1] : null;
-    if (m.kind === 'unit' && m.session !== 'lectura' && prev && UNITS[prev.id])
-      blocks.push({ id: 'read', min: MIN.read, icon: 'search', kicker: 'Lectura en modo reto', text: UNITS[prev.id].reading.title, detail: 'Antes de abrir cada frase, di en voz alta su sujeto y su verbo principal.', link: `#unidad/${prev.id}/lectura`, ready: true, cta: 'Abrir la lectura' });
-    else
-      blocks.push({ id: 'read', min: MIN.read, icon: 'news', kicker: 'Lectura libre', text: COURSE_DEF.readingTitle || 'Un artículo de tu nivel', detail: COURSE_DEF.readingDetail || 'Elige algo que te interese. Desmonta solo las frases que no entiendas a la primera.', ext: COURSE_DEF.readingLinks, ready: true });
-    if (!d.input && COURSE_DEF.seriesHint) blocks.push({ id: 'series', min: MIN.series, icon: 'film', kicker: 'Escucha', text: COURSE_DEF.seriesHint.text, detail: COURSE_DEF.seriesHint.detail, link: '#series', ready: true, cta: 'Abrir Series' });
-    if (d.input) blocks.push({ id: 'series', min: MIN.series, icon: 'film', kicker: d.input.fresh ? 'Episodio nuevo' : 'Repaso del episodio', text: `${d.input.name} · T${d.input.season}E${d.input.episode}`, detail: d.input.fresh ? 'Audio y subtítulos en inglés. La película se parará de vez en cuando para proponerte un reto.' : 'Vuelve a ver 15–20 minutos intentando entenderlo sin mirar los subtítulos.', input: d.input, ready: true, cta: 'Ver en Jellyfin' });
-  }
-  const due = Vocab.due(s).length;
-  blocks.push({ id: 'vocab', min: MIN.vocab, icon: 'cards', kicker: 'Vocabulario', text: due ? `${due} tarjeta${due > 1 ? 's' : ''} por repasar` : 'Repasa tus tarjetas', detail: 'Repasa las del día y añade las palabras nuevas que hayas visto hoy.', link: '#vocabulario', ready: true, cta: 'Repasar' });
+  if (m.kind !== 'mock') blocks.push(...companionBlocks(m.kind === 'unit' ? m.unit : null, m.session, d.input));
+  blocks.push(vocabBlock(s));
   if (d.writing) blocks.push({ id: 'writing', min: MIN.writing, icon: 'file', kicker: 'Writing de la semana', text: d.writing.replace(/ \(.*\)\.?$/, ''), detail: `${d.writing} Cuando lo tengas, pégaselo a Claude para que te lo corrija.`, ready: true });
   return fitToTime(blocks);
 }
@@ -234,7 +258,7 @@ function renderToday(main, args) {
       <a class="chip-stat" href="#ruta" style="--c:${lv.color}"><span class="dot"></span>Nivel ${lv.name}<b>${lvPct}%</b></a>
       <span class="chip-stat">${icon('flame')}Racha<b>${streak()} d</b></span>
       <a class="chip-stat" href="#vocabulario">${icon('cards')}Tarjetas<b>${Vocab.due().length}</b></a>
-      ${BY_LEVELS ? `<a class="chip-stat" href="#ajustes">${icon('target')}Objetivo<b>${PACE.goal} módulo${PACE.goal > 1 ? 's' : ''}</b></a>` : ''}
+      ${BY_LEVELS && PACE.chosen ? `<a class="chip-stat" href="#ajustes">${icon('clock')}Al día<b>${fmtMin(PACE.minutes)}</b></a>` : ''}
     </div>
 
     ${toStart > 0 && isToday ? `<div class="notice">${icon('info')}<span>Tu plan empieza el <b>${longDate(PLAN_START)}</b>. Puedes ir mirando la unidad 1.</span></div>` : ''}
@@ -299,7 +323,7 @@ function renderToday(main, args) {
     else toast(blk.detail);
   });
   $('#note')?.addEventListener('input', e => store.set(st => { if (e.target.value.trim()) st.notes[s] = e.target.value; else delete st.notes[s]; }));
-  main.querySelector('[data-act="watch"]')?.addEventListener('click', e => watchToday(d.input, e.currentTarget));
+  main.querySelector('[data-act="watch"]')?.addEventListener('click', e => watchToday(next.input, e.currentTarget));
 }
 
 async function watchToday(inp, btn) {
@@ -359,18 +383,17 @@ function paceFormHtml(p) {
     <div class="pace-opts">
       <button type="button" class="pace-opt ${p.mode === 'levels' ? 'on' : ''}" data-mode="levels">
         <span class="pace-ic">${icon('target')}</span><b>Por niveles <span class="rec">Recomendada</span></b>
-        <small>Cada día haces unos pocos módulos y avanzas de nivel a tu ritmo. Sin fechas ni retrasos.</small>
+        <small>Cada día, un módulo de la unidad, una lectura, una serie y tus tarjetas. Sin fechas: si un día no estudias, sigues donde lo dejaste.</small>
       </button>
       <button type="button" class="pace-opt ${p.mode === 'plan' ? 'on' : ''}" data-mode="plan">
         <span class="pace-ic">${icon('calendar')}</span><b>Plan con calendario</b>
-        <small>Un plan día a día con fechas para cada nivel. Tú decides cuánto tiempo le dedicas y qué días descansas.</small>
+        <small>Lo mismo, pero con fechas para cada nivel y días de descanso. Te dice si vas al día o atrasado.</small>
       </button>
     </div>
-    <div class="pace-fields" data-for="levels" ${p.mode === 'levels' ? '' : 'hidden'}>
-      <label class="field">Módulos al día ${sel('pgoal', [[1, '1 módulo (unos 20 min)'], [2, '2 módulos (unos 40 min)'], [3, '3 módulos (1 hora)'], [5, '5 módulos (más de 1 h 30 min)']], p.goal)}</label>
+    <div class="pace-fields">
+      <label class="field">Tiempo al día ${sel('pmin', [[30, '30 minutos'], [60, '1 hora'], [120, '2 horas'], [180, '3 horas']], p.minutes)}</label>
     </div>
     <div class="pace-fields" data-for="plan" ${p.mode === 'plan' ? '' : 'hidden'}>
-      <label class="field">Tiempo al día ${sel('pmin', [[30, '30 minutos'], [60, '1 hora'], [120, '2 horas'], [180, '3 horas']], p.minutes)}</label>
       <label class="field">Días a la semana ${sel('pdays', [[5, '5 días (descanso el fin de semana)'], [6, '6 días (descanso el domingo)'], [7, 'Todos los días']], p.days)}</label>
     </div>`;
 }
@@ -379,12 +402,13 @@ function bindPaceForm(root, p) {
   root.querySelectorAll('.pace-opt').forEach(b => b.onclick = () => {
     cur.mode = b.dataset.mode;
     root.querySelectorAll('.pace-opt').forEach(x => x.classList.toggle('on', x === b));
-    root.querySelectorAll('.pace-fields').forEach(f => f.hidden = f.dataset.for !== cur.mode);
+    root.querySelectorAll('.pace-fields[data-for]').forEach(f => f.hidden = f.dataset.for !== cur.mode);
   });
-  return () => ({ ...cur, goal: Number($('#pgoal', root).value), minutes: Number($('#pmin', root).value), days: Number($('#pdays', root).value) });
+  return () => ({ ...cur, goal: 1, minutes: Number($('#pmin', root).value), days: Number($('#pdays', root).value) });
 }
 function renderPaceSetup(main, id, onDone) {
-  const c = COURSES[id], p = { ...CourseStore.pace(id), mode: 'levels' };
+  const saved = CourseStore.pace(id), c = COURSES[id];
+  const p = saved.chosen ? saved : { ...saved, mode: 'levels', minutes: 60 }; // a quien empieza le proponemos 1 hora
   main.innerHTML = `
     <section class="courses pace-setup" style="--c:${c.color}">
       <span class="cflag big">${flagOf(id)}</span>
@@ -404,6 +428,7 @@ const PATH_X = [0, 60, 96, 60, 0, -60, -96, -60];
 const MODULES = [['teoria', 'open', 'Teoría'], ['practica', 'pencil', 'Práctica'], ['lectura', 'search', 'Lectura']];
 function renderPath(main) {
   const cur = pendingSteps(1)[0];
+  const modMin = (cur && levelBlocks(today())[0]?.min) || MIN.main; // lo que dura un módulo con tu tiempo al día
   let k = 0, unitN = 0, passed = false; // passed: ya hemos dejado atrás el módulo actual
   const node = o => {
     const x = PATH_X[k++ % PATH_X.length];
@@ -425,7 +450,7 @@ function renderPath(main) {
     <header class="page-head"><div><h1>Tu ruta</h1><p class="muted">${esc(ACTIVE_COURSE.subtitle)}, nivel a nivel, a tu ritmo.</p></div></header>
     <div class="chips">
       <span class="chip-stat">${icon('flame')}Racha<b>${streak()} d</b></span>
-      <a class="chip-stat" href="#ajustes">${icon('target')}Objetivo<b>${PACE.goal} módulo${PACE.goal > 1 ? 's' : ''} al día</b></a>
+      <a class="chip-stat" href="#ajustes">${icon('clock')}Al día<b>${fmtMin(PACE.minutes)}</b></a>
     </div>
     <div class="path"><svg class="path-line" aria-hidden="true"></svg>
     ${LEVELS.map((lv, li) => {
@@ -450,7 +475,7 @@ function renderPath(main) {
             const b = unitBlock(u.id, ses, 'path');
             return node({ state, icon: ic, label, pct: st.pct, title: u.title, kicker: `Unidad ${n} · Módulo ${i + 1} de 3 · ${label}`,
               detail: !ready ? 'Esta unidad aún no está preparada.' : state === 'locked' ? 'Se abre cuando termines los módulos anteriores.' : b.detail,
-              min: 20, link: b.link, cta: state === 'done' ? 'Repasar' : b.cta });
+              min: modMin, link: b.link, cta: state === 'done' ? 'Repasar' : b.cta });
           }).join('');
           return `<a class="unit-card ${u.id === cur?.unit ? 'cur' : ''}" href="#unidad/${u.id}/teoria">
               <span class="n ${st.pct === 100 ? 'ok' : ''}">${st.pct === 100 ? icon('check') : n}</span>
