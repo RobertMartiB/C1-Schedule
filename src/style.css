@@ -670,3 +670,5 @@ body.picking nav.main, body.picking #chatbtn, body.picking #coursebtn { display:
 .path-deco small { font-size: .72rem; color: var(--dim); font-weight: 600; }
 @media (max-width: 520px) { .path-deco { left: calc(50% + var(--side) * 122px); } .deco-n { font-size: 2.4rem; } .path-deco .segs { width: 52px; } }
 .nodes:has(.popped), .path-level:has(.popped) { z-index: 6; }
+.big { font-size: 1.35em; font-weight: 600; }
+.rtl { direction: rtl; unicode-bidi: isolate; display: inline-block; }

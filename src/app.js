@@ -241,7 +241,7 @@ function renderToday(main, args) {
 
     ${!d && BY_LEVELS ? `<div class="empty-card">${icon('trophy')}<h2>Has terminado todo lo disponible</h2><p>Pídele a Claude que prepare la siguiente unidad. Mientras, repasa tus tarjetas.</p></div>`
       : !d ? `<div class="empty-card">${icon('calendar')}<p>Este día está fuera del plan.</p></div>`
-      : d.rest ? `<div class="empty-card">${icon('coffee')}<h2>${esc(d.rest.split(':')[0])}</h2><p>Hoy toca descansar. Si te apetece, mira algo en inglés sin presión.</p></div>`
+      : d.rest ? `<div class="empty-card">${icon('coffee')}<h2>${esc(d.rest.split(':')[0])}</h2><p>Hoy toca descansar. Si te apetece, mira algo ${ACTIVE_COURSE.inLang} sin presión.</p></div>`
       : `
     ${next ? `
     <section class="next" style="--c:${lv.color}">
@@ -554,7 +554,7 @@ async function renderSeries(main, arg) {
     main.innerHTML = `
       <h1>Series y películas</h1>
       <form class="login" id="login">
-        <p>Conecta tu servidor de Jellyfin para ver tus series y películas aquí mismo, con subtítulos en inglés.</p>
+        <p>Conecta tu servidor de Jellyfin para ver tus series y películas aquí mismo, con subtítulos ${ACTIVE_COURSE.inLang}.</p>
         <label>Servidor<input name="server" placeholder="http://192.168.1.50:8096" required value="${esc(store.get().lastServer || '')}"></label>
         ${store.get().jellyfin?.expired ? '<p class="banner">Tu sesión ha caducado. Vuelve a escribir la contraseña: el resto se mantiene.</p>' : ''}
         <label>Usuario<input name="user" autocomplete="username" required value="${esc(store.get().lastUser || '')}"></label>
@@ -662,7 +662,7 @@ async function openPlayer(ep) {
   try {
     const { url, subtitles } = await Jellyfin.playback(ep.Id);
     video.querySelectorAll('track').forEach(t => t.remove());
-    const isEn = s => /^(en|eng)$/i.test(s.lang) || /english|ingl/i.test(s.label);
+    const isEn = s => ACTIVE_COURSE.sub.test(s.lang || '') || ACTIVE_COURSE.sub.test(s.label || ''); // subtítulos en el idioma del curso
     const isEs = s => /^(es|spa)$/i.test(s.lang) || /spanish|españ|espan|castellano/i.test(s.label);
     const enIdx = subtitles.findIndex(isEn), esIdx = subtitles.findIndex(isEs);
     subtitles.forEach((s, i) => {
@@ -685,7 +685,7 @@ async function openPlayer(ep) {
       hls.on(Hls.Events.MANIFEST_PARSED, start);
       hls.on(Hls.Events.ERROR, (_, d) => d.fatal && toast('Error de reproducción. Revisa que el servidor permita transcodificar.'));
     } else toast('Tu navegador no puede reproducir este vídeo.');
-    if (enIdx < 0) toast('Este episodio no tiene subtítulos en inglés en el servidor: los retos de traducción no funcionarán.');
+    if (enIdx < 0) toast(`Este episodio no tiene subtítulos ${ACTIVE_COURSE.inLang} en el servidor: los retos de traducción no funcionarán.`);
     let last = 0;
     video.ontimeupdate = () => {
       const every = quizEvery();
@@ -735,7 +735,7 @@ function showQuiz() {
     </div>` : `
     <div class="qcard">
       <span class="eyebrow">${icon('sparkle')}Reto · ${clock(t)} · ¿Qué ha pasado hasta ahora?</span>
-      <p>Resume <b>en inglés</b>, en 2 o 3 frases, lo que ha pasado desde el último reto. No hace falta que sea perfecto.</p>
+      <p>Resume <b>${ACTIVE_COURSE.inLang}</b>, en 2 o 3 frases, lo que ha pasado desde el último reto. No hace falta que sea perfecto.</p>
       <p class="tips">Te pueden ayudar: <i>So far… · At the beginning… · Then… · It seems that… · I think that…</i></p>
       <textarea id="qmine" rows="4" placeholder="So far, …"></textarea>
       <div class="row"><button class="primary" id="qsave">Guardar y seguir viendo</button><button id="qskip">Saltar</button></div>
@@ -808,7 +808,7 @@ function renderSettings(main) {
     ${Chat.settingsHtml()}
     <h2>Retos en series y películas</h2>
     <div class="panel">
-      <p>Mientras ves algo en inglés, la película se para cada cierto tiempo y te propone traducir la última frase o resumir lo que ha pasado.</p>
+      <p>Mientras ves algo ${ACTIVE_COURSE.inLang}, la película se para cada cierto tiempo y te propone traducir la última frase o resumir lo que ha pasado.</p>
       <label class="field">Un reto cada
         <select id="quizevery">${[[0, 'Sin retos'], [5, '5 minutos'], [10, '10 minutos'], [15, '15 minutos'], [20, '20 minutos']].map(([v, l]) => `<option value="${v}" ${quizEvery() === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
       </label>
@@ -838,7 +838,7 @@ function renderSettings(main) {
     const { jellyfin, ...data } = store.get();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
-    a.download = `ingles-progreso-${today()}.json`; a.click();
+    a.download = `speakly-${ACTIVE_COURSE.id}-progreso-${today()}.json`; a.click();
   });
   $('#import').addEventListener('change', async e => {
     try { store.replace({ ...JSON.parse(await e.target.files[0].text()), jellyfin: store.get().jellyfin }); toast('Progreso importado'); }
@@ -883,13 +883,13 @@ $('#coursebtn').innerHTML = `<span class="ccode small" style="--c:${ACTIVE_COURS
 $('#coursebtn').onclick = () => { location.hash = 'cursos'; };
 $('#chatbtn').onclick = () => Chat.toggle();
 // Pronunciación: cualquier botón con data-say se lee en voz alta en el idioma del curso
-const SPEAK_LANG = { en: 'en-GB', ja: 'ja-JP' }[ACTIVE_COURSE.id] || 'en-GB';
+const SPEAK_LANG = ACTIVE_COURSE.lang || 'en-GB';
 function speak(text) {
   if (!('speechSynthesis' in window)) { toast('Este dispositivo no puede leer en voz alta.'); return; }
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text); u.lang = SPEAK_LANG; u.rate = 0.85;
   const v = speechSynthesis.getVoices().find(x => x.lang?.toLowerCase().startsWith(SPEAK_LANG.slice(0, 2)));
-  if (v) u.voice = v; else if (SPEAK_LANG === 'ja-JP') toast('No hay voz en japonés instalada en este dispositivo.');
+  if (v) u.voice = v; else if (!SPEAK_LANG.startsWith('en')) toast(`No hay voz ${ACTIVE_COURSE.inLang} instalada en este dispositivo.`);
   speechSynthesis.speak(u);
 }
 document.addEventListener('click', e => { const b = e.target.closest('[data-say]'); if (b) { e.preventDefault(); speak(b.dataset.say); } });

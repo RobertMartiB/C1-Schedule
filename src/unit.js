@@ -6,7 +6,9 @@ const ROLE = {
   W: { name: 'Palabra', cls: 'w' },
 };
 const roleLegend = () => COURSE_DEF.id !== 'en' ? '' : `<div class="legend-roles">${Object.values(ROLE).filter(r => r.cls !== 'w').map(r => `<span class="${r.cls}">${r.name}</span>`).join('')}</div>`;
-const normAns = s => String(s || '').toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+// Letras de cualquier alfabeto (é, ñ, ß, кириллица, 한글…); se ignoran la puntuación y los apóstrofos
+const noMarks = s => normAns(s).normalize('NFD').replace(/\p{M}/gu, '');
+const normAns = s => String(s || '').normalize('NFC').toLowerCase().replace(/[’'`´]/g, '').replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
 
 const progress = id => store.get().units?.[id] || {};
 function setProgress(id, fn) { store.set(s => { s.units ||= {}; s.units[id] ||= {}; fn(s.units[id]); }); }
@@ -153,9 +155,19 @@ const tokensOf = parts => parts.flatMap(([role, text], pi) => text.split(/\s+/).
 
 const exStateTag = st => st === true ? `<span class="state ok">${icon('check')}Acertado</span>` : st === false ? `<span class="state bad">${icon('repeat')}Fallado: vuelve a intentarlo</span>` : '';
 
+// Orden de las opciones mezclado, pero siempre el mismo para cada pregunta (no cambia al volver a entrar)
+function mixOrder(opts, seed) {
+  const h = str => {
+    let x = [...str].reduce((a, c) => Math.imul(a ^ c.codePointAt(0), 16777619) >>> 0, (2166136261 ^ Math.imul(seed + 1, 2654435761)) >>> 0);
+    x = Math.imul(x ^ (x >>> 16), 2246822507); x = Math.imul(x ^ (x >>> 13), 3266489909);
+    return (x ^ (x >>> 16)) >>> 0;
+  };
+  return opts.map((o, j) => ({ j, k: h(o + '|' + j) })).sort((a, b) => a.k - b.k).map(x => x.j);
+}
+
 function exerciseHtml(ex, i) {
   const fb = '<div class="fb" hidden></div>';
-  if (ex.type === 'mcq') return `<div class="exq">${ex.q}</div><div class="choices">${ex.opts.map((o, j) => `<button class="choice" data-j="${j}">${esc(o)}</button>`).join('')}</div>${fb}`;
+  if (ex.type === 'mcq') return `<div class="exq">${ex.q}</div><div class="choices">${mixOrder(ex.opts, i).map(j => `<button class="choice" data-j="${j}">${esc(ex.opts[j])}</button>`).join('')}</div>${fb}`;
   if (ex.type === 'gap') return `<div class="exq">${ex.q.replace('___', `<input class="gapin" aria-label="Respuesta" autocomplete="off" autocapitalize="off" spellcheck="false">`)}</div><div class="row"><button class="check">Comprobar</button></div>${fb}`;
   if (ex.type === 'order') {
     const shuffled = ex.words.map((w, k) => ({ w, k })).sort((a, b) => ((a.k * 7 + i * 3) % 11) - ((b.k * 7 + i * 3) % 11));
@@ -181,7 +193,14 @@ function bindExercise(li, ex, onResult) {
     });
   } else if (ex.type === 'gap') {
     const inp = li.querySelector('.gapin');
-    const check = () => { const ok = ex.a.includes(normAns(inp.value)); inp.classList.toggle('right', ok); inp.classList.toggle('wrong', !ok); show(ok, ok ? '' : `Respuesta: <b>${esc(ex.a[0])}</b>.`); };
+    const check = () => {
+      const val = normAns(inp.value), exact = ex.a.includes(val);
+      // Sin el acento correcto también vale, pero se avisa (en el móvil es fácil olvidarlo)
+      const near = !exact && ex.a.find(x => noMarks(x) === noMarks(val));
+      const ok = exact || !!near;
+      inp.classList.toggle('right', ok); inp.classList.toggle('wrong', !ok);
+      show(ok, near ? `Bien, pero fíjate en los acentos: se escribe <b>${esc(near)}</b>.` : ok ? '' : `Respuesta: <b>${esc(ex.a[0])}</b>.`);
+    };
     li.querySelector('.check').onclick = check;
     inp.onkeydown = e => { if (e.key === 'Enter') check(); };
   } else if (ex.type === 'order') {

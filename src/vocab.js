@@ -45,7 +45,7 @@ const Vocab = (() => {
       <section class="review-box" id="review"></section>
       <h2>Añadir una palabra</h2>
       <form class="addform" id="addform">
-        <input id="nw" placeholder="Palabra o expresión en inglés" required autocomplete="off" autocapitalize="off">
+        <input id="nw" placeholder="Palabra o expresión ${ACTIVE_COURSE.inLang}" required autocomplete="off" autocapitalize="off">
         <input id="nes" placeholder="Traducción" required autocomplete="off">
         <input id="nex" placeholder="Frase de ejemplo (opcional)" autocomplete="off">
         <button class="primary" type="submit">Añadir</button>

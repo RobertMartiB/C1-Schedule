@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacidad · Speakly</title>
+  <meta name="description" content="Política de privacidad de Speakly: qué datos guarda la app, dónde y con quién se comparten.">
+  <link rel="icon" href="icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg: #0b0a12; --card: #16141f; --line: rgba(255, 255, 255, .09); --text: #f1eff8; --muted: #aaa4bf; --accent: #9b82ff; color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.7 "Plus Jakarta Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    body::before { content: ""; position: fixed; inset: 0; z-index: -1; background: radial-gradient(50vmax 40vmax at 0% 0%, rgba(75, 47, 209, .22), transparent 70%), radial-gradient(50vmax 40vmax at 100% 100%, rgba(176, 40, 122, .16), transparent 70%); }
+    main { max-width: 760px; margin: 0 auto; padding: 40px 20px 80px; }
+    a { color: var(--accent); }
+    .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; color: var(--text); text-decoration: none; }
+    .brand img { width: 32px; height: 32px; border-radius: 9px; }
+    h1 { font-size: clamp(2rem, 5vw, 2.8rem); letter-spacing: -.03em; line-height: 1.1; margin: 34px 0 8px; }
+    h2 { font-size: 1.2rem; margin: 34px 0 8px; }
+    .muted { color: var(--muted); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 18px 22px; margin: 22px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="brand" href="./"><img src="icon.png" alt="">Speakly</a>
+    <h1>Política de privacidad</h1>
+    <p class="muted">Última actualización: 2 de noviembre de 2026</p>
+
+    <div class="card">
+      <b>En resumen:</b> Speakly no tiene cuentas, ni anuncios, ni estadísticas de uso. Tu progreso se guarda en tu dispositivo. Solo se envía algo fuera cuando tú usas funciones que lo necesitan (el chat con Claude o tu servidor Jellyfin), y siempre a servicios que eliges tú.
+    </div>
+
+    <h2>Quién es el responsable</h2>
+    <p>Speakly es una app gratuita hecha por Robert Martí. Para cualquier duda sobre privacidad puedes escribir abriendo una incidencia en <a href="https://github.com/RobertMartiB/Speakly/issues">GitHub</a>.</p>
+
+    <h2>Qué datos guarda la app y dónde</h2>
+    <table>
+      <tr><th>Dato</th><th>Dónde se guarda</th></tr>
+      <tr><td>Tu progreso: días hechos, unidades, respuestas de los ejercicios, tarjetas de vocabulario y notas</td><td>Solo en tu dispositivo</td></tr>
+      <tr><td>Tus ajustes: curso, forma de estudiar, tema</td><td>Solo en tu dispositivo</td></tr>
+      <tr><td>Tu clave de API de Anthropic, si la añades</td><td>Solo en tu dispositivo</td></tr>
+      <tr><td>La dirección y la sesión de tu servidor Jellyfin, si lo conectas</td><td>Solo en tu dispositivo</td></tr>
+    </table>
+    <p>No recogemos tu nombre, tu correo ni tu ubicación, y no hay ningún servidor de Speakly que guarde datos de las personas que la usan.</p>
+
+    <h2>Cuándo salen datos de tu dispositivo</h2>
+    <ul>
+      <li><b>Chat con Claude</b> (opcional): los mensajes que escribes en el chat se envían a <a href="https://www.anthropic.com/legal/privacy">Anthropic</a> usando tu propia clave de API, para que Claude pueda responder. Se rigen por las condiciones de Anthropic para su API.</li>
+      <li><b>Jellyfin</b> (opcional): si conectas tu servidor Jellyfin, la app se comunica con él para mostrar tus series y, si activas la sincronización, guarda allí una copia de tu progreso. Ese servidor es tuyo o de alguien de tu confianza.</li>
+      <li><b>Tipografías</b>: la app y la web cargan las tipografías desde Google Fonts, lo que implica que Google recibe la dirección IP de tu dispositivo al descargarlas.</li>
+      <li><b>Enlaces externos</b>: algunas tareas abren webs de terceros (por ejemplo, periódicos para leer). Al abrirlas, se aplican sus propias políticas.</li>
+    </ul>
+
+    <h2>Permisos</h2>
+    <p>La app solo necesita acceso a internet para las funciones anteriores. No pide acceso a tu ubicación, cámara, micrófono ni contactos.</p>
+
+    <h2>Menores</h2>
+    <p>Speakly no recoge datos personales, así que se puede usar a cualquier edad. El chat con Claude necesita una clave de API propia, sujeta a las condiciones de edad de Anthropic.</p>
+
+    <h2>Borrar tus datos</h2>
+    <p>Como todo está en tu dispositivo, basta con desinstalar la app o borrar los datos del navegador. En <b>Ajustes</b> también puedes exportar tu progreso antes de hacerlo.</p>
+
+    <h2>Cambios</h2>
+    <p>Si esta política cambia, se actualizará en esta página con su nueva fecha.</p>
+  </main>
+</body>
+</html>

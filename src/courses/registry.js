@@ -2,17 +2,29 @@
 // El curso activo se elige en la pantalla de cursos y se carga antes que el resto de la app.
 const UNITS = {}; // cada fichero de unidad añade aquí su contenido
 
+// lang: voz para leer en voz alta · sub: cómo reconocer sus subtítulos en Jellyfin · inLang: «en francés», etc.
+const course = (id, code, name, subtitle, color, lang, sub, inLang, files) =>
+  ({ id, code, name, subtitle, color, lang, sub, inLang, storeKey: 'tracker:' + id, syncId: 'speakly-' + id, files });
+
 const COURSES = {
   en: {
     id: 'en', code: 'EN', name: 'Inglés', subtitle: 'De B1 a C1 Advanced (Cambridge)',
-    color: '#4f5bff', storeKey: 'c1tracker:v2', syncId: 'c1tracker',
+    color: '#4f5bff', storeKey: 'c1tracker:v2', syncId: 'c1tracker', lang: 'en-GB', sub: /^(en|eng)$|english|ingl/i, inLang: 'en inglés',
     files: ['courses/en.js', 'units/u01.js', 'units/u02.js', 'units/u03.js', 'units/u04.js', 'units/u05.js', 'units/u06.js', 'units/u07.js', 'units/u08.js'],
   },
+  fr: course('fr', 'FR', 'Francés', 'Desde cero hasta el B1', '#0ea5e9', 'fr-FR', /^(fr|fre|fra)$|french|franc/i, 'en francés', ['courses/fr.js', 'units-fr/f01.js', 'units-fr/f02.js']),
+  de: course('de', 'DE', 'Alemán', 'Desde cero hasta el B1', '#eab308', 'de-DE', /^(de|ger|deu)$|german|alem|deutsch/i, 'en alemán', ['courses/de.js', 'units-de/d01.js', 'units-de/d02.js']),
+  it: course('it', 'IT', 'Italiano', 'Desde cero hasta el B1', '#10b981', 'it-IT', /^(it|ita)$|italian/i, 'en italiano', ['courses/it.js', 'units-it/i01.js', 'units-it/i02.js']),
+  pt: course('pt', 'PT', 'Portugués', 'Desde cero hasta el B1 (Brasil y Portugal)', '#84cc16', 'pt-BR', /^(pt|por)$|portug/i, 'en portugués', ['courses/pt.js', 'units-pt/p01.js', 'units-pt/p02.js']),
   ja: {
     id: 'ja', code: 'JA', name: 'Japonés', subtitle: 'Desde cero hasta el JLPT N5',
-    color: '#e0457b', storeKey: 'tracker:ja', syncId: 'c1tracker-ja',
+    color: '#e0457b', storeKey: 'tracker:ja', syncId: 'c1tracker-ja', lang: 'ja-JP', sub: /^(ja|jpn)$|japan|japon/i, inLang: 'en japonés',
     files: ['courses/ja.js', 'units-ja/j01.js', 'units-ja/j02.js', 'units-ja/j03.js', 'units-ja/j04.js'],
   },
+  zh: course('zh', 'ZH', 'Chino mandarín', 'Desde cero hasta el HSK 2', '#ef4444', 'zh-CN', /^(zh|chi|zho|cmn)$|chinese|chino|mandarin/i, 'en chino', ['courses/zh.js', 'units-zh/z01.js', 'units-zh/z02.js']),
+  ko: course('ko', 'KO', 'Coreano', 'Desde cero hasta el TOPIK I', '#8b5cf6', 'ko-KR', /^(ko|kor)$|korean|corea/i, 'en coreano', ['courses/ko.js', 'units-ko/k01.js', 'units-ko/k02.js']),
+  ru: course('ru', 'RU', 'Ruso', 'Desde cero hasta el A2', '#f97316', 'ru-RU', /^(ru|rus)$|russian|ruso/i, 'en ruso', ['courses/ru.js', 'units-ru/r01.js', 'units-ru/r02.js']),
+  ar: course('ar', 'AR', 'Árabe', 'Árabe estándar desde cero hasta el A2', '#14b8a6', 'ar-SA', /^(ar|ara)$|arabic|árabe|arabe/i, 'en árabe', ['courses/ar.js', 'units-ar/a01.js', 'units-ar/a02.js']),
 };
 
 const CourseStore = {
