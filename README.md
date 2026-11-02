@@ -6,7 +6,7 @@
 
 <p align="center">
   <b>Aprende idiomas a tu ritmo, desde casa.</b><br>
-  Inglés de B1 a C1 Advanced y japonés desde cero, con teoría clara, ejercicios que se corrigen solos y lecturas que te enseñan a desmontar frases largas.
+  Diez idiomas, del inglés y el francés al japonés, el chino o el árabe, con teoría clara, ejercicios que se corrigen solos y lecturas que te enseñan a desmontar frases largas.
 </p>
 
 <p align="center">
@@ -91,7 +91,7 @@ El calendario se recalcula solo y te enseña qué días llevas hechos, a medias 
 
 Al abrir la app eliges el curso. Cada uno guarda su propio progreso, y puedes añadir otro cuando quieras.
 
-<p align="center"><img src="docs/capturas/cursos.jpg" width="820" alt="Selector de cursos"></p>
+<p align="center"><img src="docs/capturas/cursos.jpg" width="560" alt="Selector de cursos con los diez idiomas"></p>
 
 ### Teoría y práctica
 
@@ -134,10 +134,20 @@ El botón de arriba a la izquierda abre un chat pequeño para preguntar dudas y 
 
 ## Cursos disponibles
 
-| Curso | Niveles | Estado |
+| Curso | Niveles | Unidades escritas |
 |---|---|---|
-| **Inglés** · de B1 a C1 Advanced (Cambridge) | B1+ · B2 · C1 · Examen (formato y simulacros) | Unidades 1–8 (B1+) escritas; se van añadiendo |
-| **Japonés** · desde cero hasta el JLPT N5 | Escritura (hiragana y katakana) · Primeros pasos · JLPT N5 | Hiragana 1–4 escritos; se van añadiendo |
+| **Inglés** · de B1 a C1 Advanced (Cambridge) | B1+ · B2 · C1 · Examen (formato y simulacros) | 8 de 26 |
+| **Francés** · desde cero hasta el B1 | A1 · A2 · B1 | 2 de 24 |
+| **Alemán** · desde cero hasta el B1 | A1 · A2 · B1 | 2 de 24 |
+| **Italiano** · desde cero hasta el B1 | A1 · A2 · B1 | 2 de 24 |
+| **Portugués** · desde cero hasta el B1 (Brasil y Portugal) | A1 · A2 · B1 | 2 de 24 |
+| **Japonés** · desde cero hasta el JLPT N5 | Escritura (hiragana y katakana) · Primeros pasos · JLPT N5 | 4 de 20 |
+| **Chino mandarín** · desde cero hasta el HSK 2 | Sonidos y tonos · HSK 1 · HSK 2 | 2 de 20 |
+| **Coreano** · desde cero hasta el TOPIK I | Hangul · Primeros pasos · TOPIK I | 2 de 20 |
+| **Ruso** · desde cero hasta el A2 | Cirílico · A1 · A2 | 2 de 20 |
+| **Árabe** estándar · desde cero hasta el A2 | Alfabeto · A1 · A2 | 2 de 20 |
+
+Cada curso tiene su ruta completa planificada; las unidades se van escribiendo y publicando poco a poco. La app usa la voz del sistema en el idioma de cada curso y, en Jellyfin, busca los subtítulos en ese idioma.
 
 Todo el contenido es original, escrito para la app; no está copiado de ningún libro.
 
@@ -202,8 +212,8 @@ Una sola base de código en `src/` (HTML, CSS y JavaScript sin bundler) para las
 
 ```
 src/                  la app (compartida por todas las plataformas)
-├─ courses/           cursos: registry.js (lista, curso activo y forma de estudiar) y el plan de cada uno (en.js, ja.js)
-├─ units/, units-ja/  contenido de las unidades: teoría, ejercicios y lectura
+├─ courses/           cursos: registry.js (lista, curso activo y forma de estudiar) y el plan de cada uno (en.js, fr.js, ja.js…)
+├─ units*/            contenido de las unidades de cada idioma: teoría, ejercicios y lectura
 ├─ course.js          convierte el temario en un calendario (modo plan)
 ├─ app.js             pantallas: Hoy, Ruta, recorrido por niveles, calendario, series y ajustes
 ├─ unit.js            teoría, práctica, lectura desmontada y libro
@@ -232,7 +242,7 @@ Para probar la versión web basta con servir `src/`, por ejemplo con `python3 -m
 
 ### Añadir una unidad
 
-1. Crea `src/units/uXX.js` (o `src/units-ja/jXX.js`) con el mismo formato que las demás: `theory`, `exercises` y `reading`, con las frases desmontadas por papeles (`S V O R C X W`).
+1. Crea el fichero en la carpeta del idioma (`src/units/uXX.js` para inglés, `src/units-fr/fXX.js` para francés…) con el mismo formato que las demás: `theory`, `exercises` y `reading`, con las frases desmontadas por papeles (`S V O R C X W`).
 2. Añade el fichero a `files` del curso en `src/courses/registry.js`.
 3. Si es de inglés, regenera el PDF del libro.
 
