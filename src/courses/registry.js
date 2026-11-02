@@ -19,7 +19,7 @@ const COURSES = {
   ja: {
     id: 'ja', code: 'JA', name: 'Japonés', subtitle: 'Desde cero hasta el JLPT N5',
     color: '#e0457b', storeKey: 'tracker:ja', syncId: 'c1tracker-ja', lang: 'ja-JP', sub: /^(ja|jpn)$|japan|japon/i, inLang: 'en japonés',
-    files: ['courses/ja.js', 'units-ja/j01.js', 'units-ja/j02.js', 'units-ja/j03.js', 'units-ja/j04.js'],
+    files: ['courses/ja.js', 'units-ja/j01.js', 'units-ja/j02.js', 'units-ja/j03.js', 'units-ja/j04.js', 'units-ja/j05.js'],
   },
   zh: course('zh', 'ZH', 'Chino mandarín', 'Desde cero hasta el HSK 2', '#ef4444', 'zh-CN', /^(zh|chi|zho|cmn)$|chinese|chino|mandarin/i, 'en chino', ['courses/zh.js', 'units-zh/z01.js', 'units-zh/z02.js']),
   ko: course('ko', 'KO', 'Coreano', 'Desde cero hasta el TOPIK I', '#8b5cf6', 'ko-KR', /^(ko|kor)$|korean|corea/i, 'en coreano', ['courses/ko.js', 'units-ko/k01.js', 'units-ko/k02.js']),

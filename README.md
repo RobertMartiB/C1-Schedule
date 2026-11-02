@@ -141,7 +141,7 @@ El botón de arriba a la izquierda abre un chat pequeño para preguntar dudas y 
 | **Alemán** · desde cero hasta el B1 | A1 · A2 · B1 | 3 de 24 |
 | **Italiano** · desde cero hasta el B1 | A1 · A2 · B1 | 3 de 24 |
 | **Portugués** · desde cero hasta el B1 (Brasil y Portugal) | A1 · A2 · B1 | 3 de 24 |
-| **Japonés** · desde cero hasta el JLPT N5 | Escritura (hiragana y katakana) · Primeros pasos · JLPT N5 | 4 de 20 |
+| **Japonés** · desde cero hasta el JLPT N5 | Escritura (hiragana y katakana) · Primeros pasos · JLPT N5 | 5 de 20 |
 | **Chino mandarín** · desde cero hasta el HSK 2 | Sonidos y tonos · HSK 1 · HSK 2 | 2 de 20 |
 | **Coreano** · desde cero hasta el TOPIK I | Hangul · Primeros pasos · TOPIK I | 2 de 20 |
 | **Ruso** · desde cero hasta el A2 | Cirílico · A1 · A2 | 2 de 20 |
