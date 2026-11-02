@@ -10,7 +10,7 @@ const COURSES = {
   en: {
     id: 'en', code: 'EN', name: 'Inglés', subtitle: 'De B1 a C1 Advanced (Cambridge)',
     color: '#4f5bff', storeKey: 'c1tracker:v2', syncId: 'c1tracker', lang: 'en-GB', sub: /^(en|eng)$|english|ingl/i, inLang: 'en inglés',
-    files: ['courses/en.js', 'units/u01.js', 'units/u02.js', 'units/u03.js', 'units/u04.js', 'units/u05.js', 'units/u06.js', 'units/u07.js', 'units/u08.js'],
+    files: ['courses/en.js', 'units/u01.js', 'units/u02.js', 'units/u03.js', 'units/u04.js', 'units/u05.js', 'units/u06.js', 'units/u07.js', 'units/u08.js', 'units/u09.js'],
   },
   fr: course('fr', 'FR', 'Francés', 'Desde cero hasta el B1', '#0ea5e9', 'fr-FR', /^(fr|fre|fra)$|french|franc/i, 'en francés', ['courses/fr.js', 'units-fr/f01.js', 'units-fr/f02.js', 'units-fr/f03.js']),
   de: course('de', 'DE', 'Alemán', 'Desde cero hasta el B1', '#eab308', 'de-DE', /^(de|ger|deu)$|german|alem|deutsch/i, 'en alemán', ['courses/de.js', 'units-de/d01.js', 'units-de/d02.js', 'units-de/d03.js']),
