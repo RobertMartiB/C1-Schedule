@@ -327,7 +327,7 @@ function renderCourses(main) {
   const card = id => {
     const c = COURSES[id], pr = courseProgress(id), cur = id === ACTIVE_COURSE.id;
     return `<button class="course-card ${cur ? 'cur' : ''}" data-course="${id}" style="--c:${c.color}">
-      <span class="ccode">${c.code}</span>
+      <span class="cflag">${flagOf(id)}</span>
       <span class="cinfo"><b>${c.name}</b><small>${c.subtitle}</small><small class="cprog">${pr.units ? `${pr.units} unidad${pr.units > 1 ? 'es' : ''} empezada${pr.units > 1 ? 's' : ''}` : 'Sin empezar'}</small></span>
       ${icon('right', 'chev')}
     </button>`;
@@ -341,7 +341,7 @@ function renderCourses(main) {
       ${others.length ? `<h3>Añadir otro curso</h3><div class="course-list">${others.map(id => {
         const c = COURSES[id];
         const ready = c.files.filter(f => f.startsWith('units')).length;
-        return `<button class="course-card add" data-add="${id}" style="--c:${c.color}"><span class="ccode">${c.code}</span><span class="cinfo"><b>${c.name}</b><small>${c.subtitle}</small><small class="cprog muted">${ready} unidad${ready === 1 ? '' : 'es'} lista${ready === 1 ? '' : 's'}</small></span>${icon('plus', 'chev')}</button>`;
+        return `<button class="course-card add" data-add="${id}" style="--c:${c.color}"><span class="cflag">${flagOf(id)}</span><span class="cinfo"><b>${c.name}</b><small>${c.subtitle}</small><small class="cprog muted">${ready} unidad${ready === 1 ? '' : 'es'} lista${ready === 1 ? '' : 's'}</small></span>${icon('plus', 'chev')}</button>`;
       }).join('')}</div>` : ''}
     </section>`;
   const go = id => { CourseStore.add(id); CourseStore.active = id; CourseStore.picked = true; location.hash = 'hoy'; location.reload(); };
@@ -387,7 +387,7 @@ function renderPaceSetup(main, id, onDone) {
   const c = COURSES[id], p = { ...CourseStore.pace(id), mode: 'levels' };
   main.innerHTML = `
     <section class="courses pace-setup" style="--c:${c.color}">
-      <span class="ccode big">${c.code}</span>
+      <span class="cflag big">${flagOf(id)}</span>
       <h1>¿Cómo quieres estudiar ${esc(c.name.toLowerCase())}?</h1>
       <p class="muted">Lo puedes cambiar cuando quieras en Ajustes.</p>
       ${paceFormHtml(p)}
@@ -880,7 +880,7 @@ if (CapApp) CapApp.addListener('backButton', () => {
 $('#player').addEventListener('close', () => { if (hls || $('#video').src) closePlayer(); });
 document.querySelectorAll('[data-icon]').forEach(el => { el.outerHTML = icon(el.dataset.icon); });
 // Cabecera: curso activo (para cambiar) y chat
-$('#coursebtn').innerHTML = `<span class="ccode small" style="--c:${ACTIVE_COURSE.color}">${ACTIVE_COURSE.code}</span>`;
+$('#coursebtn').innerHTML = `<span class="cflag small">${flagOf(ACTIVE_COURSE.id)}</span>`;
 $('#coursebtn').onclick = () => { location.hash = 'cursos'; };
 $('#chatbtn').onclick = () => Chat.toggle();
 // Pronunciación: cualquier botón con data-say se lee en voz alta en el idioma del curso
