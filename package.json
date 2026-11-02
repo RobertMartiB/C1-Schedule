@@ -1,7 +1,7 @@
 {
   "name": "c1-tracker",
-  "productName": "C1 Tracker",
-  "version": "2.5.0",
+  "productName": "Speakly",
+  "version": "2.6.0",
   "description": "Tu plan de estudio para el Cambridge C1 Advanced, con calendario, materiales y Jellyfin.",
   "author": "Robert Martí",
   "license": "MIT",
@@ -14,7 +14,7 @@
   },
   "build": {
     "appId": "dev.robert.c1tracker",
-    "productName": "C1 Tracker",
+    "productName": "Speakly",
     "files": [
       "main.js",
       "src/**/*"
@@ -23,7 +23,7 @@
       "output": "dist",
       "buildResources": "build"
     },
-    "artifactName": "C1-Tracker-${version}-${os}-${arch}.${ext}",
+    "artifactName": "Speakly-${version}-${os}-${arch}.${ext}",
     "linux": {
       "category": "Education",
       "icon": "build/icon.png",
@@ -45,7 +45,7 @@
     "esbuild": "^0.28.2",
     "hls.js": "^1.7.4"
   },
-  "homepage": "https://github.com/RobertMartiB/C1-Schedule",
+  "homepage": "https://github.com/RobertMartiB/Speakly",
   "desktopName": "c1-tracker.desktop",
   "dependencies": {
     "@capacitor/app": "^7.1.2",

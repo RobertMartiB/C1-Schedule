@@ -1,4 +1,4 @@
-// Ventana de escritorio de C1 Tracker. Sirve la app desde un servidor local con
+// Ventana de escritorio de Speakly. Sirve la app desde un servidor local con
 // puerto fijo para que el progreso (localStorage) se conserve entre aperturas y
 // para poder conectar con servidores Jellyfin por http.
 const { app, BrowserWindow, shell } = require('electron');
@@ -7,6 +7,8 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = 47821;
+// La app se llamaba «C1 Tracker»: se mantiene su carpeta de datos para no perder el progreso guardado.
+app.setPath('userData', path.join(app.getPath('appData'), 'C1 Tracker'));
 const ROOT = path.join(__dirname, 'src');
 const TYPES = { '.webmanifest': 'application/manifest+json', '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
@@ -30,8 +32,8 @@ function startServer() {
 function createWindow() {
   const win = new BrowserWindow({
     width: 1100, height: 800, minWidth: 380, minHeight: 500,
-    title: 'C1 Tracker', icon: path.join(__dirname, 'src', 'icon.png'),
-    autoHideMenuBar: true, backgroundColor: '#12141b',
+    title: 'Speakly', icon: path.join(__dirname, 'src', 'icon.png'),
+    autoHideMenuBar: true, backgroundColor: '#0b0a12',
   });
   // Los enlaces externos (Write & Improve, Cambridge…) se abren en el navegador.
   win.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: 'deny' }; });

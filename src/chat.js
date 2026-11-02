@@ -18,7 +18,7 @@ const Chat = (() => {
     const t = today(), d = SCHEDULE[t];
     const unit = d?.main?.unit ? unitById(d.main.unit) : null;
     return [
-      `Eres el tutor de idiomas de la app "C1 Tracker". El alumno es hispanohablante y estudia ${course ? course.chatTopic : 'idiomas'}.`,
+      `Eres el tutor de idiomas de la app "Speakly". El alumno es hispanohablante y estudia ${course ? course.chatTopic : 'idiomas'}.`,
       unit ? `Ahora mismo está en la unidad "${unit.title}" (${unit.focus}).` : '',
       'Responde siempre en español, de forma breve y clara (normalmente 2-6 frases).',
       'Para traducciones, da la traducción y, si ayuda, una nota corta sobre una expresión o estructura.',

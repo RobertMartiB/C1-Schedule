@@ -366,7 +366,7 @@ function readingSummary(box, id) {
 }
 
 // ---------- Libro: toda la gramática para leer y consultar ----------
-const BOOK_PDF = 'https://robertmartib.github.io/C1-Schedule/libro/C1-Tracker-Libro-B1.pdf';
+const BOOK_PDF = 'https://robertmartib.github.io/Speakly/libro/Speakly-Libro-B1.pdf';
 function bookIndex() {
   return SYLLABUS.map((u, i) => ({ ...u, n: i + 1, text: UNITS[u.id] ? (u.title + ' ' + u.focus + ' ' + UNITS[u.id].theory.map(t => t.h + ' ' + t.html.replace(/<[^>]+>/g, ' ')).join(' ')).toLowerCase() : '' }));
 }

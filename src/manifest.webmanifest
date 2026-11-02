@@ -1,12 +1,12 @@
 {
-  "name": "C1 Tracker",
-  "short_name": "C1 Tracker",
-  "description": "Tu ruta de inglés de B1 a C1: teoría, práctica, lecturas desmontadas y vocabulario.",
+  "name": "Speakly",
+  "short_name": "Speakly",
+  "description": "Tu ruta para aprender idiomas: inglés de B1 a C1 y japonés desde cero, con teoría, práctica, lecturas y vocabulario.",
   "start_url": "./#hoy",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#12141b",
-  "theme_color": "#12141b",
+  "background_color": "#0b0a12",
+  "theme_color": "#0b0a12",
   "lang": "es",
   "icons": [
     { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },

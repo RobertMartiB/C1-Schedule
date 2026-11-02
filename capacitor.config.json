@@ -1,6 +1,6 @@
 {
   "appId": "dev.robert.c1tracker",
-  "appName": "C1 Tracker",
+  "appName": "Speakly",
   "webDir": "src",
   "server": { "androidScheme": "http", "cleartext": true },
   "android": { "allowMixedContent": true }

@@ -8,6 +8,9 @@ const WRITINGS = COURSE_DEF.writings || {};
 const HOLIDAYS = COURSE_DEF.holidays || {};
 const PLAN_START = COURSE_DEF.start || CourseStore.start(COURSE_DEF.id);
 const EXAM_PREP_DAYS = COURSE_DEF.examPrepDays || 0;
+// Cómo ha elegido estudiar este curso la persona (ver CourseStore.pace)
+const PACE = CourseStore.pace(COURSE_DEF.id);
+const BY_LEVELS = PACE.mode === 'levels';
 
 // ---- fechas en hora local ----
 const pad = n => String(n).padStart(2, '0');
@@ -30,7 +33,8 @@ function buildSchedule() {
   const nextStudyDay = () => {
     for (;;) {
       const s = date; date = addDays(date, 1);
-      if (weekday(s) === 0) { days[s] = { date: s, rest: 'Domingo: descanso', blocks: [] }; continue; }
+      if (PACE.days < 7 && weekday(s) === 0) { days[s] = { date: s, rest: 'Domingo: descanso', blocks: [] }; continue; }
+      if (PACE.days < 6 && weekday(s) === 6) { days[s] = { date: s, rest: 'Sábado: descanso', blocks: [] }; continue; }
       if (HOLIDAYS[s]) { days[s] = { date: s, rest: `${HOLIDAYS[s]}: día libre`, blocks: [] }; continue; }
       return s;
     }

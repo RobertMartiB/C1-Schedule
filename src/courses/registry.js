@@ -31,6 +31,14 @@ const CourseStore = {
       return s;
     } catch { return null; }
   },
+  // Forma de estudiar de cada curso: por niveles (módulos al día, sin fechas) o con un plan de calendario.
+  // Sin elegir, se mantiene el plan de siempre (calendario de 3 horas, descanso los domingos).
+  pace(id) {
+    const def = { mode: 'plan', goal: 2, minutes: 180, days: 6 };
+    try { const p = JSON.parse(localStorage.getItem('tracker:pace:' + id) || 'null'); if (p) return { ...def, ...p, chosen: true }; } catch {}
+    return def;
+  },
+  setPace(id, p) { try { localStorage.setItem('tracker:pace:' + id, JSON.stringify({ mode: p.mode, goal: p.goal, minutes: p.minutes, days: p.days })); } catch {} },
   get picked() { try { return sessionStorage.getItem('tracker:picked') === '1'; } catch { return true; } },
   set picked(v) { try { sessionStorage.setItem('tracker:picked', v ? '1' : ''); } catch {} },
 };

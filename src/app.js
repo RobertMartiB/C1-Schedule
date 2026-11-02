@@ -62,6 +62,56 @@ function unitBlock(uid, session, id, kickerPrefix = '') {
 }
 const blockDone = (s, b) => b.auto || isDone(s, b.id);
 
+// Plan con calendario: los bloques del día se ajustan al tiempo que has elegido.
+// Con poco tiempo se quedan solo los esenciales y el resto se reparte en proporción.
+function fitToTime(blocks) {
+  if (!PACE.chosen) return blocks;
+  const budget = PACE.minutes;
+  const keep = budget <= 30 ? ['main', 'ahead', 'vocab'] : budget <= 60 ? ['main', 'ahead', 'read', 'vocab'] : budget < 120 ? ['main', 'ahead', 'read', 'series', 'vocab'] : null;
+  const out = keep ? blocks.filter(b => keep.includes(b.id)) : blocks;
+  if (out.some(b => b.min > 200)) return out; // simulacro: dura lo que dura
+  const base = out.filter(b => !b.extra && b.id !== 'writing').reduce((a, b) => a + b.min, 0);
+  const k = budget / base;
+  return out.map(b => ({ ...b, min: Math.max(5, Math.round(b.min * k / 5) * 5) }));
+}
+
+// ---- Modo por niveles: unos módulos al día, sin fechas, avanzando a tu ritmo ----
+// Un módulo es una parte de una unidad: teoría, práctica o lectura.
+function pendingSteps(n) {
+  const out = [];
+  for (const u of SYLLABUS) {
+    if (!UNITS[u.id]) break;
+    for (const ses of ['teoria', 'practica', 'lectura']) {
+      if (!sessionDone(u.id, ses)) out.push({ unit: u.id, session: ses });
+      if (out.length >= n) return out;
+    }
+  }
+  return out;
+}
+// Los módulos de cada día se fijan la primera vez que abres Hoy ese día
+function dailySteps(s) {
+  if (!store.get().daily?.[s]?.length && s === today()) store.set(st => { st.daily = st.daily || {}; st.daily[s] = pendingSteps(PACE.goal); });
+  return store.get().daily?.[s] || [];
+}
+function levelBlocks(s) {
+  const blocks = dailySteps(s).map((p, i) => ({ ...unitBlock(p.unit, p.session, 'm' + i), min: 20 }));
+  if (blocks.length) {
+    const due = Vocab.due(s).length;
+    blocks.push({ id: 'vocab', min: 10, icon: 'cards', kicker: 'Vocabulario', text: due ? `${due} tarjeta${due > 1 ? 's' : ''} por repasar` : 'Repasa tus tarjetas', detail: 'Repasa las del día y añade las palabras nuevas que hayas visto hoy.', link: '#vocabulario', ready: true, cta: 'Repasar' });
+  }
+  return blocks;
+}
+function levelNow() {
+  const nx = pendingSteps(1)[0];
+  if (nx) return levelById(unitById(nx.unit).level);
+  const last = [...SYLLABUS].reverse().find(u => UNITS[u.id]) || SYLLABUS[0];
+  return levelById(last.level);
+}
+function levelPct(lv) {
+  const units = SYLLABUS.filter(u => u.level === lv.id);
+  return units.length ? Math.round(units.filter(u => unitStatus(u.id).pct === 100).length / units.length * 100) : 0;
+}
+
 function dayBlocks(s) {
   const d = SCHEDULE[s];
   if (!d || d.rest) return [];
@@ -92,7 +142,7 @@ function dayBlocks(s) {
   const due = Vocab.due(s).length;
   blocks.push({ id: 'vocab', min: MIN.vocab, icon: 'cards', kicker: 'Vocabulario', text: due ? `${due} tarjeta${due > 1 ? 's' : ''} por repasar` : 'Repasa tus tarjetas', detail: 'Repasa las del día y añade las palabras nuevas que hayas visto hoy.', link: '#vocabulario', ready: true, cta: 'Repasar' });
   if (d.writing) blocks.push({ id: 'writing', min: MIN.writing, icon: 'file', kicker: 'Writing de la semana', text: d.writing.replace(/ \(.*\)\.?$/, ''), detail: `${d.writing} Cuando lo tengas, pégaselo a Claude para que te lo corrija.`, ready: true });
-  return blocks;
+  return fitToTime(blocks);
 }
 
 const isDone = (s, id) => (store.get().done[s] || []).includes(id);
@@ -100,7 +150,7 @@ function toggleDone(s, id) {
   store.set(st => { const set = new Set(st.done[s] || []); set.has(id) ? set.delete(id) : set.add(id); st.done[s] = [...set]; });
 }
 function dayStatus(s) {
-  const b = dayBlocks(s).filter(x => !x.extra);
+  const b = (BY_LEVELS ? levelBlocks(s) : dayBlocks(s)).filter(x => !x.extra);
   if (!b.length) return 'none';
   const n = b.filter(x => blockDone(s, x)).length;
   if (n === b.length) return 'done';
@@ -110,7 +160,7 @@ function dayStatus(s) {
 function streak() {
   let s = today(), n = 0;
   if (dayStatus(s) !== 'done') s = addDays(s, -1);
-  for (let guard = 0; guard < 400 && SCHEDULE[s]; guard++) {
+  for (let guard = 0; guard < 400 && (BY_LEVELS ? store.get().daily?.[s] : SCHEDULE[s]); guard++) {
     const st = dayStatus(s);
     if (st === 'none') { s = addDays(s, -1); continue; }
     if (st !== 'done') break;
@@ -141,15 +191,22 @@ window.addEventListener('hashchange', route);
 // ---- HOY ----
 function renderToday(main, args) {
   const t = today();
-  let s = args[0] || selectedDate || t;
+  let s = BY_LEVELS ? t : args[0] || selectedDate || t;
   if (s < PLAN_START && !args[0]) s = PLAN_START;
   if (s > PLAN_END && !args[0]) s = PLAN_END;
+  if (BY_LEVELS) s = t;
   selectedDate = s;
-  const d = SCHEDULE[s], lv = currentLevel(s), blocks = dayBlocks(s);
-  const lvRange = LEVEL_RANGES[lv.id];
-  const lvDays = Object.keys(SCHEDULE).filter(x => x >= lvRange.from && x <= lvRange.to && !SCHEDULE[x].rest);
-  const lvPct = Math.max(0, Math.min(100, Math.round(lvDays.filter(x => x < t).length / lvDays.length * 100)));
-  const toStart = daysBetween(t, PLAN_START);
+  let d, lv, blocks, lvPct, toStart = 0;
+  if (BY_LEVELS) {
+    blocks = levelBlocks(s); lv = levelNow(); lvPct = levelPct(lv);
+    d = blocks.length ? { main: {} } : null;
+  } else {
+    d = SCHEDULE[s]; lv = currentLevel(s); blocks = dayBlocks(s);
+    const lvRange = LEVEL_RANGES[lv.id];
+    const lvDays = Object.keys(SCHEDULE).filter(x => x >= lvRange.from && x <= lvRange.to && !SCHEDULE[x].rest);
+    lvPct = Math.max(0, Math.min(100, Math.round(lvDays.filter(x => x < t).length / lvDays.length * 100)));
+    toStart = daysBetween(t, PLAN_START);
+  }
   const isToday = s === t;
   const core = blocks.filter(b => !b.extra);
   const pending = blocks.filter(b => !blockDone(s, b));
@@ -166,7 +223,7 @@ function renderToday(main, args) {
         <p class="overline">${isToday ? `<span class="cap">${dateLabel}</span>` : relDay(t, s)}</p>
         <h1>${isToday ? `${hello}${name ? `, ${esc(name)}` : ''}` : `<span class="cap">${dateLabel}</span>`}</h1>
       </div>
-      <div class="daynav">
+      <div class="daynav" ${BY_LEVELS ? 'hidden' : ''}>
         <button class="icon" id="prev" aria-label="Día anterior">${icon('left')}</button>
         ${!isToday ? `<a class="btn small" href="#hoy/${t}">Hoy</a>` : ''}
         <button class="icon" id="next" aria-label="Día siguiente">${icon('right')}</button>
@@ -177,11 +234,13 @@ function renderToday(main, args) {
       <a class="chip-stat" href="#ruta" style="--c:${lv.color}"><span class="dot"></span>Nivel ${lv.name}<b>${lvPct}%</b></a>
       <span class="chip-stat">${icon('flame')}Racha<b>${streak()} d</b></span>
       <a class="chip-stat" href="#vocabulario">${icon('cards')}Tarjetas<b>${Vocab.due().length}</b></a>
+      ${BY_LEVELS ? `<a class="chip-stat" href="#ajustes">${icon('target')}Objetivo<b>${PACE.goal} módulo${PACE.goal > 1 ? 's' : ''}</b></a>` : ''}
     </div>
 
     ${toStart > 0 && isToday ? `<div class="notice">${icon('info')}<span>Tu plan empieza el <b>${longDate(PLAN_START)}</b>. Puedes ir mirando la unidad 1.</span></div>` : ''}
 
-    ${!d ? `<div class="empty-card">${icon('calendar')}<p>Este día está fuera del plan.</p></div>`
+    ${!d && BY_LEVELS ? `<div class="empty-card">${icon('trophy')}<h2>Has terminado todo lo disponible</h2><p>Pídele a Claude que prepare la siguiente unidad. Mientras, repasa tus tarjetas.</p></div>`
+      : !d ? `<div class="empty-card">${icon('calendar')}<p>Este día está fuera del plan.</p></div>`
       : d.rest ? `<div class="empty-card">${icon('coffee')}<h2>${esc(d.rest.split(':')[0])}</h2><p>Hoy toca descansar. Si te apetece, mira algo en inglés sin presión.</p></div>`
       : `
     ${next ? `
@@ -199,10 +258,10 @@ function renderToday(main, args) {
         ${next.link && next.ready ? '' : `<button class="ghostbtn" data-done="${next.id}">${icon('check')}Marcar como hecho</button>`}
       </div>
     </section>` : `
-    <section class="next done-all">${icon('trophy')}<div><h2>Día completado</h2><p class="muted">Buen trabajo. Mañana más.</p></div></section>`}
+    <section class="next done-all">${icon('trophy')}<div><h2>${BY_LEVELS ? 'Objetivo cumplido' : 'Día completado'}</h2><p class="muted">Buen trabajo. Mañana más.</p>${BY_LEVELS && pendingSteps(1).length ? `<button class="primary" data-act="more">${icon('plus')}Un módulo más</button>` : ''}</div></section>`}
 
     <section class="plan">
-      <div class="plan-head"><h3>Plan del día</h3><span class="muted small">${core.filter(b => blockDone(s, b)).length} de ${core.length}${left ? ` · quedan ${fmtMin(left)}` : ''}</span></div>
+      <div class="plan-head"><h3>${BY_LEVELS ? 'Tu objetivo de hoy' : 'Plan del día'}</h3><span class="muted small">${core.filter(b => blockDone(s, b)).length} de ${core.length}${left ? ` · quedan ${fmtMin(left)}` : ''}</span></div>
       <div class="segs">${core.map(b => `<i class="${blockDone(s, b) ? 'on' : ''}"></i>`).join('')}</div>
       <ul class="rows">
         ${blocks.map(b => `<li class="${blockDone(s, b) ? 'done' : ''} ${b === next ? 'current' : ''} ${b.extra ? 'extra' : ''}">
@@ -221,6 +280,11 @@ function renderToday(main, args) {
       <textarea id="note" rows="4" placeholder="Errores, palabras nuevas, dudas para Claude…">${esc(store.get().notes[s] || '')}</textarea>
     </details>`}`;
 
+  main.querySelector('[data-act="more"]')?.addEventListener('click', () => {
+    const steps = dailySteps(s), nx = pendingSteps(steps.length + 1).find(p => !steps.some(q => q.unit === p.unit && q.session === p.session));
+    if (nx) store.set(st => { st.daily[s] = [...steps, nx]; });
+    renderToday(main, [s]);
+  });
   $('#prev').onclick = () => { location.hash = `hoy/${addDays(s, -1)}`; };
   $('#next').onclick = () => { location.hash = `hoy/${addDays(s, 1)}`; };
   main.querySelectorAll('[data-done]').forEach(b => b.onclick = () => {
@@ -248,7 +312,7 @@ async function watchToday(inp, btn) {
   finally { btn.disabled = false; btn.innerHTML = old; }
 }
 
-// ---- CURSOS (como en Duolingo: eliges curso antes de entrar y puedes añadir otros) ----
+// ---- CURSOS (eliges curso antes de entrar y puedes añadir otros) ----
 function courseProgress(id) {
   try {
     const st = JSON.parse(localStorage.getItem(COURSES[id].storeKey) || '{}');
@@ -284,30 +348,172 @@ function renderCourses(main) {
     if (b.dataset.course === ACTIVE_COURSE.id) { CourseStore.picked = true; document.body.classList.remove('picking'); location.hash = 'hoy'; route(); }
     else go(b.dataset.course);
   });
-  main.querySelectorAll('[data-add]').forEach(b => b.onclick = () => go(b.dataset.add));
+  main.querySelectorAll('[data-add]').forEach(b => b.onclick = () => renderPaceSetup(main, b.dataset.add, () => go(b.dataset.add)));
 }
+
+// ---- FORMA DE ESTUDIAR (se elige al añadir un curso y se cambia en Ajustes) ----
+function paceFormHtml(p) {
+  const sel = (id, opts, val) => `<select id="${id}">${opts.map(([v, l]) => `<option value="${v}" ${v === val ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+  return `
+    <div class="pace-opts">
+      <button type="button" class="pace-opt ${p.mode === 'levels' ? 'on' : ''}" data-mode="levels">
+        <span class="pace-ic">${icon('target')}</span><b>Por niveles <span class="rec">Recomendada</span></b>
+        <small>Cada día haces unos pocos módulos y avanzas de nivel a tu ritmo. Sin fechas ni retrasos.</small>
+      </button>
+      <button type="button" class="pace-opt ${p.mode === 'plan' ? 'on' : ''}" data-mode="plan">
+        <span class="pace-ic">${icon('calendar')}</span><b>Plan con calendario</b>
+        <small>Un plan día a día con fechas para cada nivel. Tú decides cuánto tiempo le dedicas y qué días descansas.</small>
+      </button>
+    </div>
+    <div class="pace-fields" data-for="levels" ${p.mode === 'levels' ? '' : 'hidden'}>
+      <label class="field">Módulos al día ${sel('pgoal', [[1, '1 módulo (unos 20 min)'], [2, '2 módulos (unos 40 min)'], [3, '3 módulos (1 hora)'], [5, '5 módulos (más de 1 h 30 min)']], p.goal)}</label>
+    </div>
+    <div class="pace-fields" data-for="plan" ${p.mode === 'plan' ? '' : 'hidden'}>
+      <label class="field">Tiempo al día ${sel('pmin', [[30, '30 minutos'], [60, '1 hora'], [120, '2 horas'], [180, '3 horas']], p.minutes)}</label>
+      <label class="field">Días a la semana ${sel('pdays', [[5, '5 días (descanso el fin de semana)'], [6, '6 días (descanso el domingo)'], [7, 'Todos los días']], p.days)}</label>
+    </div>`;
+}
+function bindPaceForm(root, p) {
+  const cur = { ...p };
+  root.querySelectorAll('.pace-opt').forEach(b => b.onclick = () => {
+    cur.mode = b.dataset.mode;
+    root.querySelectorAll('.pace-opt').forEach(x => x.classList.toggle('on', x === b));
+    root.querySelectorAll('.pace-fields').forEach(f => f.hidden = f.dataset.for !== cur.mode);
+  });
+  return () => ({ ...cur, goal: Number($('#pgoal', root).value), minutes: Number($('#pmin', root).value), days: Number($('#pdays', root).value) });
+}
+function renderPaceSetup(main, id, onDone) {
+  const c = COURSES[id], p = { ...CourseStore.pace(id), mode: 'levels' };
+  main.innerHTML = `
+    <section class="courses pace-setup" style="--c:${c.color}">
+      <span class="ccode big">${c.code}</span>
+      <h1>¿Cómo quieres estudiar ${esc(c.name.toLowerCase())}?</h1>
+      <p class="muted">Lo puedes cambiar cuando quieras en Ajustes.</p>
+      ${paceFormHtml(p)}
+      <div class="row center"><button class="ghostbtn" id="pback">${icon('left')}Volver</button><button class="primary" id="pgo">Empezar el curso${icon('arrow')}</button></div>
+    </section>`;
+  const get = bindPaceForm(main, p);
+  $('#pback').onclick = () => renderCourses(main);
+  $('#pgo').onclick = () => { CourseStore.setPace(id, get()); onDone(); };
+}
+
+// ---- RUTA EN CAMINO (modo por niveles) ----
+// Cada unidad es un tramo del recorrido con sus tres módulos; al final de cada nivel, el test.
+const PATH_X = [0, 60, 96, 60, 0, -60, -96, -60];
+const MODULES = [['teoria', 'open', 'Teoría'], ['practica', 'pencil', 'Práctica'], ['lectura', 'search', 'Lectura']];
+function renderPath(main) {
+  const cur = pendingSteps(1)[0];
+  let k = 0, unitN = 0, passed = false; // passed: ya hemos dejado atrás el módulo actual
+  const node = o => {
+    const x = PATH_X[k++ % PATH_X.length];
+    return `<div class="node-wrap ${o.state}" style="--x:${x}px;--p:${o.pct || 0}" data-node>
+      <button class="node" aria-label="${esc(o.label)}: ${esc(o.title)}">${icon(o.state === 'done' ? 'check' : o.state === 'locked' ? 'lock' : o.icon)}</button>
+      <span class="node-cap">${o.state === 'current' ? `<b>Ahora</b> · ` : ''}${esc(o.label)}</span>
+      <div class="pop" hidden>
+        <small class="overline">${esc(o.kicker)}</small>
+        <b>${esc(o.title)}</b>
+        <p>${esc(o.detail)}</p>
+        <div class="pop-foot">
+          ${o.min ? `<span class="pill">${icon('clock')}${fmtMin(o.min)}</span>` : '<span></span>'}
+          ${o.state === 'locked' ? `<span class="muted small">${icon('lock')}Aún no</span>` : o.chat ? `<button class="primary" data-chat>${o.cta}</button>` : `<a class="btn primary" href="${o.link}">${o.cta}${icon('arrow')}</a>`}
+        </div>
+      </div>
+    </div>`;
+  };
+  main.innerHTML = `
+    <header class="page-head"><div><h1>Tu ruta</h1><p class="muted">${esc(ACTIVE_COURSE.subtitle)}, nivel a nivel, a tu ritmo.</p></div></header>
+    <div class="chips">
+      <span class="chip-stat">${icon('flame')}Racha<b>${streak()} d</b></span>
+      <a class="chip-stat" href="#ajustes">${icon('target')}Objetivo<b>${PACE.goal} módulo${PACE.goal > 1 ? 's' : ''} al día</b></a>
+    </div>
+    <div class="path"><svg class="path-line" aria-hidden="true"></svg>
+    ${LEVELS.map((lv, li) => {
+      const units = SYLLABUS.filter(u => u.level === lv.id);
+      if (!units.length) return '';
+      const done = units.filter(u => unitStatus(u.id).pct === 100).length;
+      const allDone = done === units.length;
+      return `<section class="path-level" style="--c:${lv.color}">
+        <div class="level-head"><small class="overline">Nivel ${li + 1}</small><h2>${esc(lv.name)}</h2><p>${esc(lv.goal)}</p>
+          <div class="lvbar"><i style="width:${Math.round(done / units.length * 100)}%"></i></div><span class="lvcount">${done} de ${units.length} unidades</span></div>
+        ${units.map(u => {
+          unitN++;
+          const st = unitStatus(u.id), ready = !!UNITS[u.id], n = SYLLABUS.indexOf(u) + 1;
+          // Al lado del tramo, en el lado contrario a la curva: número de unidad y sus tres módulos
+          const mid = PATH_X[(k + 1) % PATH_X.length], side = mid > 0 ? -1 : mid < 0 ? 1 : (unitN % 2 ? 1 : -1);
+          const doneMods = ready ? MODULES.filter(([ses]) => sessionDone(u.id, ses)).length : 0;
+          const deco = `<div class="path-deco" style="--side:${side}" aria-hidden="true"><span class="deco-n">${String(n).padStart(2, '0')}</span><span class="segs">${[0, 1, 2].map(i => `<i class="${i < doneMods ? 'on' : ''}"></i>`).join('')}</span><small>${doneMods} de 3</small></div>`;
+          const nodes = MODULES.map(([ses, ic, label], i) => {
+            const isCur = cur && cur.unit === u.id && cur.session === ses;
+            const state = ready && sessionDone(u.id, ses) ? 'done' : isCur ? 'current' : passed || !ready || !cur ? 'locked' : 'open';
+            if (isCur) passed = true;
+            const b = unitBlock(u.id, ses, 'path');
+            return node({ state, icon: ic, label, pct: st.pct, title: u.title, kicker: `Unidad ${n} · Módulo ${i + 1} de 3 · ${label}`,
+              detail: !ready ? 'Esta unidad aún no está preparada.' : state === 'locked' ? 'Se abre cuando termines los módulos anteriores.' : b.detail,
+              min: 20, link: b.link, cta: state === 'done' ? 'Repasar' : b.cta });
+          }).join('');
+          return `<a class="unit-card ${u.id === cur?.unit ? 'cur' : ''}" href="#unidad/${u.id}/teoria">
+              <span class="n ${st.pct === 100 ? 'ok' : ''}">${st.pct === 100 ? icon('check') : n}</span>
+              <span class="ut"><small>Unidad ${n}</small><b>${esc(u.title)}</b><span>${esc(u.focus)}</span></span>
+              ${ready ? icon('book', 'chev') : '<small class="muted">Pronto</small>'}
+            </a>
+            <div class="nodes">${deco}${nodes}</div>`;
+        }).join('')}
+        <div class="nodes">${node({ state: allDone ? 'current' : 'locked', pct: 100, icon: 'trophy', label: 'Test de nivel', title: `Test de nivel ${lv.name}`, kicker: `Final del nivel ${lv.name}`,
+          detail: allDone ? 'Pídele a Claude el test de fin de nivel. Con un 70 % o más pasas al siguiente.' : 'Se abre cuando termines todas las unidades de este nivel.', chat: true, cta: 'Hacer el test con Claude' })}</div>
+      </section>`;
+    }).join('')}
+    </div>`;
+  const wraps = [...main.querySelectorAll('[data-node]')];
+  wraps.forEach(w => w.querySelector('.node').onclick = () => {
+    const pop = w.querySelector('.pop'), open = pop.hidden;
+    wraps.forEach(x => { x.querySelector('.pop').hidden = true; x.classList.remove('popped'); });
+    pop.hidden = !open; w.classList.toggle('popped', open);
+  });
+  main.querySelectorAll('[data-chat]').forEach(b => b.onclick = () => Chat.open());
+  drawPathLine(main);
+  main.querySelector('.node-wrap.current')?.scrollIntoView({ block: 'center' });
+}
+// Línea que une los módulos: hecha en color, pendiente discontinua
+function drawPathLine(main) {
+  const path = $('.path', main), svg = $('.path-line', main);
+  if (!path || !svg) return;
+  const box = path.getBoundingClientRect();
+  const pts = [...path.querySelectorAll('.node')].map(n => {
+    const r = n.getBoundingClientRect();
+    return { x: r.left - box.left + r.width / 2, y: r.top - box.top + r.height / 2, done: n.parentElement.classList.contains('done') };
+  });
+  svg.setAttribute('width', box.width); svg.setAttribute('height', path.scrollHeight);
+  svg.innerHTML = pts.slice(1).map((b, i) => {
+    const a = pts[i], my = (a.y + b.y) / 2;
+    return `<path class="${a.done && b.done ? 'on' : ''}" d="M${a.x} ${a.y} C ${a.x} ${my}, ${b.x} ${my}, ${b.x} ${b.y}"/>`;
+  }).join('');
+}
+window.addEventListener('resize', () => { if (BY_LEVELS && $('.path')) drawPathLine($('#main')); });
 
 // ---- RUTA ----
 function renderRoute(main) {
+  if (BY_LEVELS) return renderPath(main);
   const t = today();
-  const curUnit = SCHEDULE[t]?.main?.unit || (t < PLAN_START ? 'u01' : null);
+  const curUnit = BY_LEVELS ? pendingSteps(1)[0]?.unit : SCHEDULE[t]?.main?.unit || (t < PLAN_START ? SYLLABUS[0].id : null);
+  const curLevel = BY_LEVELS ? levelNow().id : null;
+  const curIdx = SYLLABUS.findIndex(u => u.id === curUnit);
   main.innerHTML = `
-    <header class="page-head"><div><h1>Tu ruta</h1><p class="muted">${esc(ACTIVE_COURSE.subtitle)}, unidad a unidad.</p></div><a class="btn small" href="#calendario">${icon('calendar')}Calendario</a></header>
+    <header class="page-head"><div><h1>Tu ruta</h1><p class="muted">${esc(ACTIVE_COURSE.subtitle)}, ${BY_LEVELS ? 'nivel a nivel, a tu ritmo' : 'unidad a unidad'}.</p></div>${BY_LEVELS ? '' : `<a class="btn small" href="#calendario">${icon('calendar')}Calendario</a>`}</header>
     ${LEVELS.map(lv => {
       const r = LEVEL_RANGES[lv.id], units = SYLLABUS.filter(u => u.level === lv.id);
-      const now = (t >= r.from && t <= r.to) || (t < PLAN_START && lv.id === 'b1');
+      const now = BY_LEVELS ? lv.id === curLevel : (t >= r.from && t <= r.to) || (t < PLAN_START && lv.id === LEVELS[0].id);
       const done = units.filter(u => unitStatus(u.id).pct === 100).length;
       return `<section class="lvl ${now ? 'now' : ''}" style="--c:${lv.color}">
         <header>
           <div><h2>${lv.name}${now ? '<span class="nowtag">Ahora</span>' : ''}</h2><p class="muted small">${esc(lv.goal)}</p></div>
-          <div class="lvmeta"><span>${shortDate(r.from)} – ${shortDate(r.to)}</span>${units.length ? `<b>${done}/${units.length}</b>` : ''}</div>
+          <div class="lvmeta">${BY_LEVELS ? '' : `<span>${shortDate(r.from)} – ${shortDate(r.to)}</span>`}${units.length ? `<b>${done}/${units.length}</b>` : ''}</div>
         </header>
         ${units.length ? `<ol class="units">${units.map(u => {
           const st = unitStatus(u.id), n = SYLLABUS.indexOf(u) + 1;
           return `<li><a href="#unidad/${u.id}/teoria" class="${st.ready ? '' : 'pending'} ${u.id === curUnit ? 'cur' : ''}">
             <span class="n ${st.pct === 100 ? 'ok' : ''}">${st.pct === 100 ? icon('check') : n}</span>
             <span class="ut"><b>${esc(u.title)}</b><small>${esc(u.focus)}</small></span>
-            <span class="us">${!st.ready ? `<small>${UNIT_START[u.id] ? shortDate(UNIT_START[u.id]) : ''}</small>` : st.pct && st.pct < 100 ? `<span class="ring" style="--p:${st.pct}">${st.pct}</span>` : icon('right', 'chev')}</span>
+            <span class="us">${BY_LEVELS && curIdx >= 0 && SYLLABUS.indexOf(u) > curIdx && !st.pct ? icon('lock', 'chev') : !st.ready ? `<small>${UNIT_START[u.id] && !BY_LEVELS ? shortDate(UNIT_START[u.id]) : ''}</small>` : st.pct && st.pct < 100 ? `<span class="ring" style="--p:${st.pct}">${st.pct}</span>` : icon('right', 'chev')}</span>
           </a></li>`;
         }).join('')}</ol>` : `<p class="muted small">Formato de cada paper, writings cronometrados y un simulacro completo cada sábado.</p>`}
       </section>`;
@@ -576,9 +782,28 @@ $('#pfull').addEventListener('click', () => {
 });
 
 // ---- AJUSTES ----
+// El tema va aparte del progreso: es de este dispositivo y no se sincroniza.
+function theme() { try { return localStorage.getItem('tracker:theme') === 'light' ? 'light' : 'dark'; } catch { return 'dark'; } }
+function setTheme(value) {
+  try { localStorage.setItem('tracker:theme', value); } catch {}
+  if (value === 'light') document.documentElement.dataset.theme = 'light'; else delete document.documentElement.dataset.theme;
+}
+
 function renderSettings(main) {
   main.innerHTML = `
     <h1>Ajustes</h1>
+    <h2>Apariencia</h2>
+    <div class="panel">
+      <label class="field">Tema
+        <select id="theme">${[['dark', 'Oscuro'], ['light', 'Claro']].map(([v, l]) => `<option value="${v}" ${theme() === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      </label>
+    </div>
+    <h2>Tu forma de estudiar</h2>
+    <div class="panel" id="pacebox">
+      <p class="muted small">Solo para el curso de ${esc(ACTIVE_COURSE.name.toLowerCase())}. Cada curso puede tener su propio ritmo.</p>
+      ${paceFormHtml(PACE)}
+      <div class="row"><button class="primary" id="pacesave">Guardar</button></div>
+    </div>
     <h2>Chat con Claude</h2>
     ${Chat.settingsHtml()}
     <h2>Retos en series y películas</h2>
@@ -602,6 +827,9 @@ function renderSettings(main) {
       <label class="btn">Importar<input type="file" id="import" accept=".json" hidden></label>
     </div>`;
   Chat.bindSettings();
+  $('#theme').onchange = e => setTheme(e.target.value);
+  const getPace = bindPaceForm($('#pacebox'), PACE);
+  $('#pacesave').onclick = () => { CourseStore.setPace(ACTIVE_COURSE.id, getPace()); location.hash = 'hoy'; location.reload(); };
   $('#quizevery').onchange = e => { store.set(st => { st.quizEvery = Number(e.target.value); }); toast('Guardado'); };
   Sync.paint();
   $('#syncnow').onclick = () => Sync.now();

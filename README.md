@@ -1,36 +1,252 @@
-# C1 Tracker
+<p align="center">
+  <img src="src/icon.png" width="96" alt="Icono de Speakly">
+</p>
 
-App para pasar de **B1 a C1** (Cambridge C1 Advanced) estudiando desde casa: ruta por niveles con teoría, ejercicios autocorregidos, **lecturas desmontadas** (sujeto, verbo y piezas de cada frase en colores), tarjetas de vocabulario con repetición espaciada, calendario de 3 horas al día y series y películas en inglés desde tu servidor Jellyfin.
+<h1 align="center">Speakly</h1>
 
-**Web y descargas:** https://robertmartib.github.io/C1-Schedule · **Versión web/móvil:** https://robertmartib.github.io/C1-Schedule/app/
+<p align="center">
+  <b>Aprende idiomas a tu ritmo, desde casa.</b><br>
+  Inglés de B1 a C1 Advanced y japonés desde cero, con teoría clara, ejercicios que se corrigen solos y lecturas que te enseñan a desmontar frases largas.
+</p>
 
-Disponible para **Android (APK)**, **Linux** (.deb y AppImage), **Windows** (.zip) y como app web instalable.
+<p align="center">
+  <a href="https://robertmartib.github.io/Speakly"><b>Web y descargas</b></a> ·
+  <a href="https://robertmartib.github.io/Speakly/app/"><b>Usarla en el navegador</b></a> ·
+  <a href="https://github.com/RobertMartiB/Speakly/releases/latest"><b>Última versión</b></a>
+</p>
 
-## Estructura
+<p align="center">
+  Android · Linux · Windows · Web instalable (también en iPhone) · Gratis, sin cuentas y sin anuncios
+</p>
 
-- `src/`: la app (HTML, CSS y JS). La comparten las tres plataformas.
-  - `courses/`: cursos disponibles (`registry.js`) y el plan de cada uno (`en.js`, `ja.js`).
-  - `units/` y `units-ja/`: contenido de las unidades de inglés y japonés.
-  - `chat.js`: mini chat con Claude (SDK oficial empaquetado en `vendor/anthropic.js` con `npm run vendor`).
-  - `course.js`: convierte el temario del curso activo en un calendario.
+<p align="center">
+  <img src="docs/capturas/hoy.jpg" width="820" alt="Pantalla Hoy de Speakly">
+</p>
 
-  - `unit.js`, `vocab.js`, `sync.js`, `jellyfin.js`, `app.js`: pantallas y lógica.
-- `main.js`: ventana de escritorio (Electron).
-- `android/`: proyecto Android (Capacitor). El APK se compila en GitHub Actions al publicar una versión.
-- `website/`: la web de descarga (GitHub Pages; la app web se copia en `website/app/` al publicar).
+---
 
-## Desarrollo
+## Índice
+
+- [Qué es](#qué-es)
+- [Dos formas de estudiar](#dos-formas-de-estudiar)
+- [Un recorrido por la app](#un-recorrido-por-la-app)
+- [Cursos disponibles](#cursos-disponibles)
+- [En el móvil](#en-el-móvil)
+- [Instalar](#instalar)
+- [Preguntas frecuentes](#preguntas-frecuentes)
+- [Para desarrolladores](#para-desarrolladores)
+
+## Qué es
+
+Speakly es una app de estudio que te dice **qué hacer cada día** para avanzar en un idioma. En lugar de una lista infinita de lecciones, tienes una **ruta por niveles**. Cada unidad tiene tres partes:
+
+| Parte | Qué haces |
+|---|---|
+| **Teoría** | Una explicación clara de cuándo se usa cada estructura, con ejemplos y los errores típicos de los hispanohablantes. |
+| **Práctica** | Ejercicios que se corrigen al momento: elegir opción, rellenar huecos, ordenar palabras y encontrar el verbo. Cada fallo trae una pista según la palabra que hayas tocado. |
+| **Lectura desmontada** | Un texto de tu nivel. Tocas una frase, buscas tú el verbo principal y luego la ves separada en colores: sujeto, verbo, complementos, secundarias y conectores. |
+
+Además tienes **tarjetas de vocabulario** con repetición espaciada, un **libro de gramática** con toda la teoría, **series y películas** desde tu servidor Jellyfin con retos en mitad del episodio y un **mini chat con Claude** para resolver dudas sin salir de la app.
+
+## Dos formas de estudiar
+
+Al empezar un curso, Speakly te pregunta cómo quieres estudiar. Se puede cambiar en cualquier momento en **Ajustes → Tu forma de estudiar**, y cada curso tiene su propio ritmo.
+
+<p align="center">
+  <img src="docs/capturas/elegir.jpg" width="820" alt="Elegir la forma de estudiar">
+</p>
+
+### Por niveles (recomendada)
+
+Cada día haces **unos pocos módulos** (1, 2, 3 o 5, de unos 20 minutos cada uno) y avanzas por un recorrido, sin fechas ni días atrasados. Si un día te sobra tiempo, puedes hacer un módulo más.
+
+- La pantalla **Hoy** muestra tu objetivo del día con los módulos que tocan y el repaso de tarjetas.
+- La **Ruta** se convierte en un recorrido: cada unidad tiene sus tres módulos unidos por una línea. Los hechos salen en verde, el actual destacado con el progreso de la unidad y los siguientes con candado.
+- Al tocar un módulo ves qué vas a hacer, cuánto se tarda y un botón para empezar.
+- Al final de cada nivel hay un **test de nivel** que haces con Claude.
+
+<table>
+  <tr>
+    <td width="62%"><img src="docs/capturas/camino.jpg" alt="Recorrido por niveles"></td>
+    <td><img src="docs/capturas/hoy-niveles.jpg" alt="Objetivo de hoy en el modo por niveles"></td>
+  </tr>
+</table>
+
+### Plan con calendario
+
+Un plan día a día con fechas para cada nivel. Tú eliges:
+
+- **Tiempo al día**: 30 minutos, 1, 2 o 3 horas. Los bloques del día se ajustan a ese tiempo; con poco tiempo se quedan los esenciales (la unidad y el vocabulario).
+- **Días a la semana**: 5 (descanso el fin de semana), 6 (descanso el domingo) o 7.
+
+El calendario se recalcula solo y te enseña qué días llevas hechos, a medias o atrasados.
+
+<p align="center">
+  <img src="docs/capturas/calendario.jpg" width="820" alt="Calendario del plan">
+</p>
+
+## Un recorrido por la app
+
+### Elige curso
+
+Al abrir la app eliges el curso. Cada uno guarda su propio progreso, y puedes añadir otro cuando quieras.
+
+<p align="center"><img src="docs/capturas/cursos.jpg" width="820" alt="Selector de cursos"></p>
+
+### Teoría y práctica
+
+La teoría se lee con calma y con ejemplos en colores. En la práctica, cada ejercicio se corrige al momento y siempre explica el porqué, aciertes o falles. El botón **Teoría** abre la explicación en un lateral sin perder el ejercicio.
+
+<table>
+  <tr>
+    <td><img src="docs/capturas/teoria.jpg" alt="Teoría de una unidad"></td>
+    <td><img src="docs/capturas/practica.jpg" alt="Ejercicios de una unidad"></td>
+  </tr>
+</table>
+
+### Lectura desmontada
+
+La lectura se desbloquea al terminar la práctica. Primero lees el texto entero y después desmontas cada frase: buscas tú el verbo principal y luego ves la frase separada en colores, con traducción, vocabulario para guardar y preguntas de comprensión.
+
+<p align="center"><img src="docs/capturas/lectura.jpg" width="820" alt="Lectura desmontada"></p>
+
+### Libro de gramática y ruta
+
+Toda la teoría de la ruta, ordenada para consultarla, con buscador, tabla de verbos irregulares y una [versión en PDF](https://robertmartib.github.io/Speakly/libro/Speakly-Libro-B1.pdf) para imprimir.
+
+<table>
+  <tr>
+    <td><img src="docs/capturas/libro.jpg" alt="Libro de gramática"></td>
+    <td><img src="docs/capturas/ruta.jpg" alt="Ruta de unidades en el modo calendario"></td>
+  </tr>
+</table>
+
+### Chat con Claude y Ajustes
+
+El botón de arriba a la izquierda abre un chat pequeño para preguntar dudas y pedir traducciones. Usa tu propia clave de API de Anthropic, que se guarda solo en tu dispositivo. En Ajustes eliges el tema (oscuro o claro), tu forma de estudiar, la sincronización y las copias de seguridad.
+
+<table>
+  <tr>
+    <td><img src="docs/capturas/chat.jpg" alt="Mini chat con Claude"></td>
+    <td><img src="docs/capturas/ajustes.jpg" alt="Ajustes"></td>
+  </tr>
+</table>
+
+## Cursos disponibles
+
+| Curso | Niveles | Estado |
+|---|---|---|
+| **Inglés** · de B1 a C1 Advanced (Cambridge) | B1+ · B2 · C1 · Examen (formato y simulacros) | Unidades 1–8 (B1+) escritas; se van añadiendo |
+| **Japonés** · desde cero hasta el JLPT N5 | Escritura (hiragana y katakana) · Primeros pasos · JLPT N5 | Hiragana 1–4 escritos; se van añadiendo |
+
+Todo el contenido es original, escrito para la app; no está copiado de ningún libro.
+
+## En el móvil
+
+La misma app en Android, con la barra de navegación abajo.
+
+<table>
+  <tr>
+    <td><img src="docs/capturas/movil-hoy.jpg" alt="Hoy en el móvil"></td>
+    <td><img src="docs/capturas/movil-camino.jpg" alt="Recorrido por niveles en el móvil"></td>
+    <td><img src="docs/capturas/movil-lectura.jpg" alt="Lectura en el móvil"></td>
+    <td><img src="docs/capturas/movil-tarjetas.jpg" alt="Tarjetas de vocabulario en el móvil"></td>
+  </tr>
+</table>
+
+## Instalar
+
+Todo está en la [web de descargas](https://robertmartib.github.io/Speakly) y en la [última versión](https://github.com/RobertMartiB/Speakly/releases/latest).
+
+| Plataforma | Archivo | Cómo |
+|---|---|---|
+| **Android** 6 o superior | `Speakly-X.Y.Z-android.apk` | Descárgalo en el móvil, ábrelo y permite instalar apps de esa fuente. |
+| **Linux** (Ubuntu, Debian, Mint) | `Speakly-X.Y.Z-linux-amd64.deb` | Doble clic, o `sudo apt install ./Speakly-X.Y.Z-linux-amd64.deb`. |
+| **Linux** (otras distros) | `Speakly-X.Y.Z-linux-x86_64.AppImage` | Dale permiso de ejecución y ábrelo. |
+| **Windows** 10 y 11 | `Speakly-X.Y.Z-win-x64.zip` | Descomprime y abre `Speakly.exe`. |
+| **Navegador / iPhone** | — | Abre la [versión web](https://robertmartib.github.io/Speakly/app/) y añádela a la pantalla de inicio. |
+
+**Si ya usabas C1 Tracker** (el nombre anterior): en el ordenador, Speakly usa la misma carpeta de datos y conserva tu progreso. En Android, exporta antes tu progreso desde **Ajustes** por si tienes que desinstalar la versión anterior.
+
+## Preguntas frecuentes
+
+<details>
+<summary><b>¿Cómo paso mi progreso del ordenador al móvil?</b></summary>
+
+Si tienes un servidor Jellyfin, entra con el mismo usuario en la pestaña **Series** de los dos dispositivos y el progreso (días hechos, unidades, tarjetas y notas) se sincroniza solo. Si no, en **Ajustes** exporta tu progreso en uno e impórtalo en el otro.
+</details>
+
+<details>
+<summary><b>¿Necesito Jellyfin?</b></summary>
+
+No. Todo funciona sin él. Solo hace falta para ver series dentro de la app y para sincronizar entre dispositivos.
+</details>
+
+<details>
+<summary><b>¿El chat con Claude es gratis?</b></summary>
+
+Usa tu propia clave de API de Anthropic (se crea en [console.anthropic.com](https://console.anthropic.com)). Cada pregunta cuesta muy poco, pero no es gratis. El resto de la app no necesita ninguna clave.
+</details>
+
+<details>
+<summary><b>Windows dice "Windows protegió tu PC"</b></summary>
+
+Sale porque la app no está firmada. Pulsa **Más información → Ejecutar de todas formas**.
+</details>
+
+## Para desarrolladores
+
+Una sola base de código en `src/` (HTML, CSS y JavaScript sin bundler) para las tres plataformas: escritorio con Electron, Android con Capacitor y web con GitHub Pages.
+
+### Estructura
+
+```
+src/                  la app (compartida por todas las plataformas)
+├─ courses/           cursos: registry.js (lista, curso activo y forma de estudiar) y el plan de cada uno (en.js, ja.js)
+├─ units/, units-ja/  contenido de las unidades: teoría, ejercicios y lectura
+├─ course.js          convierte el temario en un calendario (modo plan)
+├─ app.js             pantallas: Hoy, Ruta, recorrido por niveles, calendario, series y ajustes
+├─ unit.js            teoría, práctica, lectura desmontada y libro
+├─ vocab.js           tarjetas con repetición espaciada
+├─ chat.js            mini chat con Claude (SDK empaquetado en vendor/anthropic.js)
+├─ jellyfin.js        series y películas desde Jellyfin, con retos
+└─ sync.js            sincronización del progreso entre dispositivos
+main.js               ventana de escritorio (Electron)
+android/              proyecto Android (Capacitor)
+website/              web de descargas (GitHub Pages; la app web se copia en website/app/ al publicar)
+docs/capturas/        capturas de este README
+```
+
+### Comandos
 
 ```bash
 npm install
-npm start            # app de escritorio
-npm run dist:linux   # .deb y AppImage en dist/
-npm run dist:win     # .zip para Windows en dist/
-npx cap sync android # copiar la app al proyecto Android
+npm start             # app de escritorio
+npm run dist:linux    # .deb y AppImage en dist/
+npm run dist:win      # .zip para Windows en dist/
+npm run vendor        # vuelve a empaquetar hls.js y el SDK de Anthropic en src/vendor/
+npx cap sync android  # copia la app al proyecto Android
 ```
 
-Para publicar una versión: sube `version` en `package.json`, compila los instaladores y crea la release (`gh release create vX.Y.Z dist/*`). El APK se añade solo a la release.
+Para probar la versión web basta con servir `src/`, por ejemplo con `python3 -m http.server -d src`.
 
-## Firma del APK
+### Añadir una unidad
 
-Si existen los secretos `ANDROID_KEYSTORE_BASE64` y `ANDROID_KEYSTORE_PASSWORD`, el APK se firma con esa clave (las actualizaciones se instalan encima). Si no, se firma con una clave de pruebas.
+1. Crea `src/units/uXX.js` (o `src/units-ja/jXX.js`) con el mismo formato que las demás: `theory`, `exercises` y `reading`, con las frases desmontadas por papeles (`S V O R C X W`).
+2. Añade el fichero a `files` del curso en `src/courses/registry.js`.
+3. Si es de inglés, regenera el PDF del libro.
+
+### Publicar una versión
+
+1. Sube `version` en `package.json`.
+2. `npm run dist:linux && npm run dist:win`.
+3. Haz commit y push a `main`. La web se publica sola con GitHub Actions.
+4. `gh release create vX.Y.Z dist/*.deb dist/*.AppImage dist/*.zip`. El APK de Android se compila en GitHub Actions y se añade solo a la release.
+
+### Firma del APK
+
+Si existen los secretos `ANDROID_KEYSTORE_BASE64` y `ANDROID_KEYSTORE_PASSWORD`, el APK se firma con esa clave y las actualizaciones se instalan encima. Si no, se firma con una clave de pruebas.
+
+---
+
+<p align="center">Hecha por Robert Martí · 2026</p>

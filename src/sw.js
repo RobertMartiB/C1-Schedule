@@ -1,5 +1,5 @@
 // Funciona sin conexión: primero intenta la red (para tener siempre la última versión) y si no hay, usa la copia guardada.
-const CACHE = 'c1tracker-v2';
+const CACHE = 'speakly-v1';
 self.addEventListener('install', e => { self.skipWaiting(); });
 self.addEventListener('activate', e => e.waitUntil(
   caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())
