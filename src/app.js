@@ -1,11 +1,17 @@
 // ---- Estado guardado en el dispositivo ----
 const store = (() => {
-  const KEY = 'c1tracker:v2';
+  const KEY = ACTIVE_COURSE.storeKey;
   const defaults = () => ({ done: {}, notes: {}, units: {}, cards: [], jellyfin: null, resume: {} });
   let state;
   try { state = { ...defaults(), ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch { state = defaults(); }
-  // Conserva la sesión de Jellyfin de la versión anterior
-  try { if (!state.jellyfin) { const old = JSON.parse(localStorage.getItem('c1tracker:v1') || '{}'); if (old.jellyfin) state.jellyfin = old.jellyfin; if (old.deviceId) state.deviceId = old.deviceId; } } catch {}
+  // Jellyfin, el chat y tu nombre se comparten entre cursos (y se conserva la sesión de la versión antigua)
+  try {
+    for (const k of ['c1tracker:v1', ...Object.values(COURSES).map(c => c.storeKey)]) {
+      if (k === KEY) continue;
+      const o = JSON.parse(localStorage.getItem(k) || '{}');
+      for (const f of ['jellyfin', 'deviceId', 'lastUser', 'lastServer', 'chat', 'quizEvery']) if (state[f] == null && o[f] != null) state[f] = o[f];
+    }
+  } catch {}
   return {
     get: () => state,
     set(fn) { fn(state); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} if (typeof Sync !== 'undefined') Sync.schedule(); mirrorStore(); },
@@ -19,7 +25,7 @@ let mirrorTimer = null;
 function mirrorStore() {
   if (!NativePrefs) return;
   clearTimeout(mirrorTimer);
-  mirrorTimer = setTimeout(() => NativePrefs.set({ key: 'c1tracker:v2', value: JSON.stringify(store.get()) }).catch(() => {}), 800);
+  mirrorTimer = setTimeout(() => NativePrefs.set({ key: ACTIVE_COURSE.storeKey, value: JSON.stringify(store.get()) }).catch(() => {}), 800);
 }
 
 const $ = (sel, el = document) => el.querySelector(sel);
@@ -48,10 +54,11 @@ function nextStep(uid) {
   }
   return null;
 }
+const MIN = { main: 60, read: 45, series: 45, vocab: 30, writing: 45, ...(COURSE_DEF.minutes || {}) };
 function unitBlock(uid, session, id, kickerPrefix = '') {
   const u = unitById(uid), ses = SESSION[session], n = SYLLABUS.indexOf(u) + 1;
   const ic = { teoria: 'open', practica: 'pencil', lectura: 'search', repaso: 'repeat' }[session];
-  return { id, min: 60, icon: ic, kicker: `${kickerPrefix}Unidad ${n} · ${ses.label}`, text: u.title, detail: ses.detail, link: `#unidad/${u.id}/${ses.tab}`, ready: !!UNITS[u.id], auto: sessionDone(uid, session), cta: session === 'teoria' ? 'Empezar la teoría' : session === 'practica' ? 'Hacer los ejercicios' : session === 'lectura' ? 'Abrir la lectura' : 'Repasar' };
+  return { id, min: MIN.main, icon: ic, kicker: `${kickerPrefix}Unidad ${n} · ${ses.label}`, text: u.title, detail: ses.detail, link: `#unidad/${u.id}/${ses.tab}`, ready: !!UNITS[u.id], auto: sessionDone(uid, session), cta: session === 'teoria' ? 'Empezar la teoría' : session === 'practica' ? 'Hacer los ejercicios' : session === 'lectura' ? 'Abrir la lectura' : 'Repasar' };
 }
 const blockDone = (s, b) => b.auto || isDone(s, b.id);
 
@@ -70,20 +77,21 @@ function dayBlocks(s) {
     }
   } else {
     const ic = m.kind === 'mock' ? 'timer' : m.kind === 'leveltest' ? 'trophy' : m.kind === 'exam' ? 'flag' : 'repeat';
-    blocks.push({ id: 'main', min: m.kind === 'mock' ? 235 : 60, icon: ic, kicker: m.kind === 'mock' ? 'Simulacro' : m.kind === 'exam' ? 'Formato del examen' : 'Repaso', text: m.text.replace(/^Formato del examen: /, ''), detail: m.detail, ready: true });
+    blocks.push({ id: 'main', min: m.kind === 'mock' ? 235 : MIN.main, icon: ic, kicker: m.kind === 'mock' ? 'Simulacro' : m.kind === 'exam' ? 'Formato del examen' : 'Repaso', text: m.text.replace(/^Formato del examen: /, ''), detail: m.detail, ready: true });
   }
   if (m.kind !== 'mock') {
     const idx = m.kind === 'unit' ? SYLLABUS.findIndex(u => u.id === m.unit) : -1;
     const prev = idx > 0 ? SYLLABUS[idx - 1] : null;
     if (m.kind === 'unit' && m.session !== 'lectura' && prev && UNITS[prev.id])
-      blocks.push({ id: 'read', min: 45, icon: 'search', kicker: 'Lectura en modo reto', text: UNITS[prev.id].reading.title, detail: 'Antes de abrir cada frase, di en voz alta su sujeto y su verbo principal.', link: `#unidad/${prev.id}/lectura`, ready: true, cta: 'Abrir la lectura' });
+      blocks.push({ id: 'read', min: MIN.read, icon: 'search', kicker: 'Lectura en modo reto', text: UNITS[prev.id].reading.title, detail: 'Antes de abrir cada frase, di en voz alta su sujeto y su verbo principal.', link: `#unidad/${prev.id}/lectura`, ready: true, cta: 'Abrir la lectura' });
     else
-      blocks.push({ id: 'read', min: 45, icon: 'news', kicker: 'Lectura libre', text: 'Un artículo de tu nivel', detail: 'Elige algo que te interese. Desmonta solo las frases que no entiendas a la primera.', ext: [['News in Levels', 'https://www.newsinlevels.com'], ['BBC Learning English', 'https://www.bbc.co.uk/learningenglish']], ready: true });
-    if (d.input) blocks.push({ id: 'series', min: 45, icon: 'film', kicker: d.input.fresh ? 'Episodio nuevo' : 'Repaso del episodio', text: `${d.input.name} · T${d.input.season}E${d.input.episode}`, detail: d.input.fresh ? 'Audio y subtítulos en inglés. La película se parará de vez en cuando para proponerte un reto.' : 'Vuelve a ver 15–20 minutos intentando entenderlo sin mirar los subtítulos.', input: d.input, ready: true, cta: 'Ver en Jellyfin' });
+      blocks.push({ id: 'read', min: MIN.read, icon: 'news', kicker: 'Lectura libre', text: COURSE_DEF.readingTitle || 'Un artículo de tu nivel', detail: COURSE_DEF.readingDetail || 'Elige algo que te interese. Desmonta solo las frases que no entiendas a la primera.', ext: COURSE_DEF.readingLinks, ready: true });
+    if (!d.input && COURSE_DEF.seriesHint) blocks.push({ id: 'series', min: MIN.series, icon: 'film', kicker: 'Escucha', text: COURSE_DEF.seriesHint.text, detail: COURSE_DEF.seriesHint.detail, link: '#series', ready: true, cta: 'Abrir Series' });
+    if (d.input) blocks.push({ id: 'series', min: MIN.series, icon: 'film', kicker: d.input.fresh ? 'Episodio nuevo' : 'Repaso del episodio', text: `${d.input.name} · T${d.input.season}E${d.input.episode}`, detail: d.input.fresh ? 'Audio y subtítulos en inglés. La película se parará de vez en cuando para proponerte un reto.' : 'Vuelve a ver 15–20 minutos intentando entenderlo sin mirar los subtítulos.', input: d.input, ready: true, cta: 'Ver en Jellyfin' });
   }
   const due = Vocab.due(s).length;
-  blocks.push({ id: 'vocab', min: 30, icon: 'cards', kicker: 'Vocabulario', text: due ? `${due} tarjeta${due > 1 ? 's' : ''} por repasar` : 'Repasa tus tarjetas', detail: 'Repasa las del día y añade las palabras nuevas que hayas visto hoy.', link: '#vocabulario', ready: true, cta: 'Repasar' });
-  if (d.writing) blocks.push({ id: 'writing', min: 45, icon: 'file', kicker: 'Writing de la semana', text: d.writing.replace(/ \(.*\)\.?$/, ''), detail: `${d.writing} Cuando lo tengas, pégaselo a Claude para que te lo corrija.`, ready: true });
+  blocks.push({ id: 'vocab', min: MIN.vocab, icon: 'cards', kicker: 'Vocabulario', text: due ? `${due} tarjeta${due > 1 ? 's' : ''} por repasar` : 'Repasa tus tarjetas', detail: 'Repasa las del día y añade las palabras nuevas que hayas visto hoy.', link: '#vocabulario', ready: true, cta: 'Repasar' });
+  if (d.writing) blocks.push({ id: 'writing', min: MIN.writing, icon: 'file', kicker: 'Writing de la semana', text: d.writing.replace(/ \(.*\)\.?$/, ''), detail: `${d.writing} Cuando lo tengas, pégaselo a Claude para que te lo corrija.`, ready: true });
   return blocks;
 }
 
@@ -122,7 +130,9 @@ function route() {
   const section = { unidad: 'ruta', calendario: 'ruta' }[view] || view;
   document.querySelectorAll('nav.main a').forEach(a => a.classList.toggle('active', a.dataset.view === section));
   const main = $('#main');
-  const views = { hoy: renderToday, ruta: renderRoute, unidad: (m, a) => renderUnit(m, a[0], a[1]), libro: renderBook, vocabulario: m => Vocab.render(m), calendario: renderCalendar, series: (m, a) => renderSeries(m, a[0]), ajustes: renderSettings };
+  if (!CourseStore.picked && view !== 'cursos') { renderCourses(main); return; }
+  if (view !== 'cursos') document.body.classList.remove('picking');
+  const views = { cursos: renderCourses, hoy: renderToday, ruta: renderRoute, unidad: (m, a) => renderUnit(m, a[0], a[1]), libro: renderBook, vocabulario: m => Vocab.render(m), calendario: renderCalendar, series: (m, a) => renderSeries(m, a[0]), ajustes: renderSettings };
   (views[view] || renderToday)(main, args);
   window.scrollTo(0, 0);
 }
@@ -238,12 +248,51 @@ async function watchToday(inp, btn) {
   finally { btn.disabled = false; btn.innerHTML = old; }
 }
 
+// ---- CURSOS (como en Duolingo: eliges curso antes de entrar y puedes añadir otros) ----
+function courseProgress(id) {
+  try {
+    const st = JSON.parse(localStorage.getItem(COURSES[id].storeKey) || '{}');
+    const units = Object.values(st.units || {}).filter(u => u.theory || u.reading || Object.keys(u.ex || {}).length).length;
+    const days = Object.keys(st.done || {}).length;
+    return { units, days };
+  } catch { return { units: 0, days: 0 }; }
+}
+function renderCourses(main) {
+  document.body.classList.add('picking');
+  const added = CourseStore.added, others = Object.keys(COURSES).filter(id => !added.includes(id));
+  const card = id => {
+    const c = COURSES[id], pr = courseProgress(id), cur = id === ACTIVE_COURSE.id;
+    return `<button class="course-card ${cur ? 'cur' : ''}" data-course="${id}" style="--c:${c.color}">
+      <span class="ccode">${c.code}</span>
+      <span class="cinfo"><b>${c.name}</b><small>${c.subtitle}</small><small class="cprog">${pr.units ? `${pr.units} unidad${pr.units > 1 ? 'es' : ''} empezada${pr.units > 1 ? 's' : ''}` : 'Sin empezar'}</small></span>
+      ${icon('right', 'chev')}
+    </button>`;
+  };
+  main.innerHTML = `
+    <section class="courses">
+      <img class="clogo" src="icon.png" alt="">
+      <h1>¿Qué vas a estudiar hoy?</h1>
+      <p class="muted">Elige un curso. Cada uno tiene su propio plan y su progreso.</p>
+      <div class="course-list">${added.map(card).join('')}</div>
+      ${others.length ? `<h3>Añadir otro curso</h3><div class="course-list">${others.map(id => {
+        const c = COURSES[id];
+        return `<button class="course-card add" data-add="${id}" style="--c:${c.color}"><span class="ccode">${c.code}</span><span class="cinfo"><b>${c.name}</b><small>${c.subtitle}</small></span>${icon('plus', 'chev')}</button>`;
+      }).join('')}</div>` : ''}
+    </section>`;
+  const go = id => { CourseStore.add(id); CourseStore.active = id; CourseStore.picked = true; location.hash = 'hoy'; location.reload(); };
+  main.querySelectorAll('[data-course]').forEach(b => b.onclick = () => {
+    if (b.dataset.course === ACTIVE_COURSE.id) { CourseStore.picked = true; document.body.classList.remove('picking'); location.hash = 'hoy'; route(); }
+    else go(b.dataset.course);
+  });
+  main.querySelectorAll('[data-add]').forEach(b => b.onclick = () => go(b.dataset.add));
+}
+
 // ---- RUTA ----
 function renderRoute(main) {
   const t = today();
   const curUnit = SCHEDULE[t]?.main?.unit || (t < PLAN_START ? 'u01' : null);
   main.innerHTML = `
-    <header class="page-head"><div><h1>Tu ruta</h1><p class="muted">De B1 a C1, unidad a unidad.</p></div><a class="btn small" href="#calendario">${icon('calendar')}Calendario</a></header>
+    <header class="page-head"><div><h1>Tu ruta</h1><p class="muted">${esc(ACTIVE_COURSE.subtitle)}, unidad a unidad.</p></div><a class="btn small" href="#calendario">${icon('calendar')}Calendario</a></header>
     ${LEVELS.map(lv => {
       const r = LEVEL_RANGES[lv.id], units = SYLLABUS.filter(u => u.level === lv.id);
       const now = (t >= r.from && t <= r.to) || (t < PLAN_START && lv.id === 'b1');
@@ -530,6 +579,8 @@ $('#pfull').addEventListener('click', () => {
 function renderSettings(main) {
   main.innerHTML = `
     <h1>Ajustes</h1>
+    <h2>Chat con Claude</h2>
+    ${Chat.settingsHtml()}
     <h2>Retos en series y películas</h2>
     <div class="panel">
       <p>Mientras ves algo en inglés, la película se para cada cierto tiempo y te propone traducir la última frase o resumir lo que ha pasado.</p>
@@ -550,6 +601,7 @@ function renderSettings(main) {
       <button id="export">Exportar progreso</button>
       <label class="btn">Importar<input type="file" id="import" accept=".json" hidden></label>
     </div>`;
+  Chat.bindSettings();
   $('#quizevery').onchange = e => { store.set(st => { st.quizEvery = Number(e.target.value); }); toast('Guardado'); };
   Sync.paint();
   $('#syncnow').onclick = () => Sync.now();
@@ -580,7 +632,7 @@ Sync.setOnSynced(() => {
   if (!typing && ['hoy', 'ruta', 'calendario', 'vocabulario'].includes(view)) route();
 });
 // Si el navegador interno perdió los datos, se recuperan del almacenamiento nativo
-if (NativePrefs) NativePrefs.get({ key: 'c1tracker:v2' }).then(({ value }) => {
+if (NativePrefs) NativePrefs.get({ key: ACTIVE_COURSE.storeKey }).then(({ value }) => {
   if (!value) { mirrorStore(); return; }
   const saved = JSON.parse(value), cur = store.get();
   if (!cur.jellyfin && saved.jellyfin || Object.keys(saved.done || {}).length > Object.keys(cur.done || {}).length) {
@@ -598,4 +650,19 @@ if (CapApp) CapApp.addListener('backButton', () => {
 });
 $('#player').addEventListener('close', () => { if (hls || $('#video').src) closePlayer(); });
 document.querySelectorAll('[data-icon]').forEach(el => { el.outerHTML = icon(el.dataset.icon); });
+// Cabecera: curso activo (para cambiar) y chat
+$('#coursebtn').innerHTML = `<span class="ccode small" style="--c:${ACTIVE_COURSE.color}">${ACTIVE_COURSE.code}</span>`;
+$('#coursebtn').onclick = () => { location.hash = 'cursos'; };
+$('#chatbtn').onclick = () => Chat.toggle();
+// Pronunciación: cualquier botón con data-say se lee en voz alta en el idioma del curso
+const SPEAK_LANG = { en: 'en-GB', ja: 'ja-JP' }[ACTIVE_COURSE.id] || 'en-GB';
+function speak(text) {
+  if (!('speechSynthesis' in window)) { toast('Este dispositivo no puede leer en voz alta.'); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text); u.lang = SPEAK_LANG; u.rate = 0.85;
+  const v = speechSynthesis.getVoices().find(x => x.lang?.toLowerCase().startsWith(SPEAK_LANG.slice(0, 2)));
+  if (v) u.voice = v; else if (SPEAK_LANG === 'ja-JP') toast('No hay voz en japonés instalada en este dispositivo.');
+  speechSynthesis.speak(u);
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-say]'); if (b) { e.preventDefault(); speak(b.dataset.say); } });
 route();

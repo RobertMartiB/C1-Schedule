@@ -12,12 +12,12 @@
   <meta name="apple-mobile-web-app-title" content="C1 Tracker">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="top">
-    <span class="brand"><img src="icon.png" alt="">C1 Tracker</span>
+    <div class="topleft"><span class="brand"><img src="icon.png" alt="">C1 Tracker</span><button class="hbtn" id="coursebtn" aria-label="Cambiar de curso" title="Cambiar de curso"></button><button class="hbtn" id="chatbtn" aria-label="Pregúntale a Claude" title="Pregúntale a Claude"><span data-icon="sparkle"></span></button></div>
     <nav class="main">
       <a href="#hoy" data-view="hoy"><span data-icon="home"></span>Hoy</a>
       <a href="#ruta" data-view="ruta"><span data-icon="route"></span>Ruta</a>
@@ -42,20 +42,15 @@
 
   <script src="vendor/hls.min.js"></script>
   <script src="icons.js"></script>
+  <script src="courses/registry.js"></script>
   <script src="course.js"></script>
-  <script src="units/u01.js"></script>
-  <script src="units/u02.js"></script>
-  <script src="units/u03.js"></script>
-  <script src="units/u04.js"></script>
-  <script src="units/u05.js"></script>
-  <script src="units/u06.js"></script>
-  <script src="units/u07.js"></script>
-  <script src="units/u08.js"></script>
   <script src="reference.js"></script>
   <script src="jellyfin.js"></script>
   <script src="sync.js"></script>
   <script src="vocab.js"></script>
   <script src="unit.js"></script>
+  <script src="vendor/anthropic.js"></script>
+  <script src="chat.js"></script>
   <script src="app.js"></script>
   <script>
     // App instalable en el móvil (no hace falta en la versión de escritorio)

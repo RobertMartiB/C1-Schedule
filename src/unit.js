@@ -3,8 +3,9 @@
 const ROLE = {
   S: { name: 'Sujeto', cls: 's' }, V: { name: 'Verbo principal', cls: 'v' }, O: { name: 'Complemento', cls: 'o' },
   R: { name: 'Oración secundaria', cls: 'r' }, C: { name: 'Conector', cls: 'c' }, X: { name: 'Información extra', cls: 'x' },
+  W: { name: 'Palabra', cls: 'w' },
 };
-const roleLegend = () => `<div class="legend-roles">${Object.values(ROLE).map(r => `<span class="${r.cls}">${r.name}</span>`).join('')}</div>`;
+const roleLegend = () => COURSE_DEF.id !== 'en' ? '' : `<div class="legend-roles">${Object.values(ROLE).filter(r => r.cls !== 'w').map(r => `<span class="${r.cls}">${r.name}</span>`).join('')}</div>`;
 const normAns = s => String(s || '').toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
 
 const progress = id => store.get().units?.[id] || {};
@@ -155,7 +156,7 @@ const exStateTag = st => st === true ? `<span class="state ok">${icon('check')}A
 function exerciseHtml(ex, i) {
   const fb = '<div class="fb" hidden></div>';
   if (ex.type === 'mcq') return `<div class="exq">${ex.q}</div><div class="choices">${ex.opts.map((o, j) => `<button class="choice" data-j="${j}">${esc(o)}</button>`).join('')}</div>${fb}`;
-  if (ex.type === 'gap') return `<div class="exq">${esc(ex.q).replace('___', `<input class="gapin" aria-label="Respuesta" autocomplete="off" autocapitalize="off" spellcheck="false">`)}</div><div class="row"><button class="check">Comprobar</button></div>${fb}`;
+  if (ex.type === 'gap') return `<div class="exq">${ex.q.replace('___', `<input class="gapin" aria-label="Respuesta" autocomplete="off" autocapitalize="off" spellcheck="false">`)}</div><div class="row"><button class="check">Comprobar</button></div>${fb}`;
   if (ex.type === 'order') {
     const shuffled = ex.words.map((w, k) => ({ w, k })).sort((a, b) => ((a.k * 7 + i * 3) % 11) - ((b.k * 7 + i * 3) % 11));
     return `<div class="exq">${esc(ex.prompt)}</div><div class="built" aria-live="polite"></div><div class="pool">${shuffled.map(o => `<button class="chip" data-k="${o.k}">${esc(o.w)}</button>`).join('')}</div><div class="row"><button class="check">Comprobar</button></div>${fb}`;
@@ -377,15 +378,15 @@ function renderBook(main, args) {
   main.innerHTML = `
     <section class="bookhead">
       <span class="eyebrow">Tu libro de gramática</span>
-      <h1>De B1 a C1</h1>
+      <h1>${esc(ACTIVE_COURSE.subtitle)}</h1>
       <p class="muted">Toda la teoría de la ruta, unidad por unidad. Es lo mismo que estudias cada día en la app: aquí lo tienes ordenado para leer y consultar.</p>
-      <div class="row"><a class="btn primary" href="${BOOK_PDF}" target="_blank" rel="noopener">${icon('download')}Libro en PDF</a><a class="btn" href="#libro/irregulares">${icon('layers')}Verbos irregulares</a></div>
+      ${COURSE_DEF.id === 'en' ? `<div class="row"><a class="btn primary" href="${BOOK_PDF}" target="_blank" rel="noopener">${icon('download')}Libro en PDF</a><a class="btn" href="#libro/irregulares">${icon('layers')}Verbos irregulares</a></div>` : ''}
     </section>
-    <input class="search" id="bq" placeholder="Busca un tema: since, pasiva, although, used to…" autocomplete="off" autocapitalize="off">
+    <input class="search" id="bq" placeholder="${COURSE_DEF.id === 'ja' ? 'Busca un tema: hiragana, は, です…' : 'Busca un tema: since, pasiva, although, used to…'}" autocomplete="off" autocapitalize="off">
     <div id="blist"></div>`;
   const draw = q => {
     q = q.trim().toLowerCase();
-    $('#blist').innerHTML = LEVELS.filter(l => l.id !== 'exam').map(lv => {
+    $('#blist').innerHTML = LEVELS.filter(l => l.kind !== 'exam').map(lv => {
       const items = idx.filter(u => u.level === lv.id && (!q || u.text.includes(q)));
       if (!items.length) return '';
       return `<section class="lvl" style="--c:${lv.color}"><header><h2>${lv.name}</h2></header>

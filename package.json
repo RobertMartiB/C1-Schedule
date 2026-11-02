@@ -1,14 +1,14 @@
 {
   "name": "c1-tracker",
   "productName": "C1 Tracker",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Tu plan de estudio para el Cambridge C1 Advanced, con calendario, materiales y Jellyfin.",
   "author": "Robert Martí",
   "license": "MIT",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "vendor": "cp node_modules/hls.js/dist/hls.min.js src/vendor/",
+    "vendor": "cp node_modules/hls.js/dist/hls.min.js src/vendor/ && esbuild tools/anthropic-entry.js --bundle --format=iife --minify --target=es2020 --outfile=src/vendor/anthropic.js",
     "dist:linux": "npm run vendor && electron-builder --linux AppImage deb",
     "dist:win": "npm run vendor && electron-builder --win zip"
   },
@@ -37,10 +37,12 @@
     }
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^1.3.0",
     "@capacitor/android": "^7.6.10",
     "@capacitor/cli": "^7.6.10",
     "electron": "^45.1.0",
     "electron-builder": "^26.18.0",
+    "esbuild": "^0.28.2",
     "hls.js": "^1.7.4"
   },
   "homepage": "https://github.com/RobertMartiB/C1-Schedule",

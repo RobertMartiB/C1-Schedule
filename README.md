@@ -8,9 +8,12 @@ Disponible para **Android (APK)**, **Linux** (.deb y AppImage), **Windows** (.zi
 
 ## Estructura
 
-- `src/`: la app (HTML, CSS y JS sin dependencias). La comparten las tres plataformas.
-  - `course.js`: niveles, temario y calendario.
-  - `units/uXX.js`: contenido de cada unidad (teoría, ejercicios y lectura).
+- `src/`: la app (HTML, CSS y JS). La comparten las tres plataformas.
+  - `courses/`: cursos disponibles (`registry.js`) y el plan de cada uno (`en.js`, `ja.js`).
+  - `units/` y `units-ja/`: contenido de las unidades de inglés y japonés.
+  - `chat.js`: mini chat con Claude (SDK oficial empaquetado en `vendor/anthropic.js` con `npm run vendor`).
+  - `course.js`: convierte el temario del curso activo en un calendario.
+
   - `unit.js`, `vocab.js`, `sync.js`, `jellyfin.js`, `app.js`: pantallas y lógica.
 - `main.js`: ventana de escritorio (Electron).
 - `android/`: proyecto Android (Capacitor). El APK se compila en GitHub Actions al publicar una versión.

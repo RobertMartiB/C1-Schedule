@@ -1,7 +1,7 @@
 // Sincroniza el progreso entre dispositivos (móvil, ordenador…) usando tu propio servidor Jellyfin.
 // Se guarda en las preferencias de tu usuario de Jellyfin, así que no hace falta ningún servicio externo.
 const Sync = (() => {
-  const PREF_ID = 'c1tracker', CLIENT = 'c1tracker', CHUNK = 3000;
+  const PREF_ID = ACTIVE_COURSE.syncId, CLIENT = 'c1tracker', CHUNK = 3000;
   let timer = null, busy = false, applying = false;
   let status = { state: 'off', at: null, error: null };
 
