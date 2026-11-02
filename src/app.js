@@ -340,7 +340,8 @@ function renderCourses(main) {
       <div class="course-list">${added.map(card).join('')}</div>
       ${others.length ? `<h3>Añadir otro curso</h3><div class="course-list">${others.map(id => {
         const c = COURSES[id];
-        return `<button class="course-card add" data-add="${id}" style="--c:${c.color}"><span class="ccode">${c.code}</span><span class="cinfo"><b>${c.name}</b><small>${c.subtitle}</small></span>${icon('plus', 'chev')}</button>`;
+        const ready = c.files.filter(f => f.startsWith('units')).length;
+        return `<button class="course-card add" data-add="${id}" style="--c:${c.color}"><span class="ccode">${c.code}</span><span class="cinfo"><b>${c.name}</b><small>${c.subtitle}</small><small class="cprog muted">${ready} unidad${ready === 1 ? '' : 'es'} lista${ready === 1 ? '' : 's'}</small></span>${icon('plus', 'chev')}</button>`;
       }).join('')}</div>` : ''}
     </section>`;
   const go = id => { CourseStore.add(id); CourseStore.active = id; CourseStore.picked = true; location.hash = 'hoy'; location.reload(); };
