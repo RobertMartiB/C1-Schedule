@@ -1,0 +1,38 @@
+// Curso de chino mandarín: desde cero hasta el HSK 2.
+// Primero pinyin y tonos; los caracteres se introducen poco a poco, siempre con su pinyin.
+const COURSE_DEF = {
+  id: 'zh',
+  chatTopic: 'chino mandarín desde cero hasta el HSK 2. Escribe siempre los caracteres simplificados con el pinyin con tonos entre paréntesis y la traducción al español',
+  minutes: { main: 45, read: 20, series: 30, vocab: 20 },
+  readingTitle: 'Escuchar y leer chino',
+  readingDetail: 'Escucha audios cortos para principiantes y repite cada frase imitando los tonos. Lee siempre con el pinyin delante.',
+  readingLinks: [['Mandarin Corner (YouTube)', 'https://www.youtube.com/@MandarinCorner2'], ['Du Chinese', 'https://www.duchinese.net']],
+  seriesHint: { text: 'Algo en chino con subtítulos', detail: 'Una serie o película en mandarín de tu Jellyfin, con subtítulos. No intentes entenderlo todo: escucha los tonos y busca palabras que ya conozcas (你好, 谢谢, 是).' },
+  levels: [
+    { id: 'pinyin', name: 'Sonidos y tonos', color: '#ef4444', goal: 'Leer pinyin, distinguir los cuatro tonos y escribir los primeros caracteres.' },
+    { id: 'hsk1', name: 'HSK 1', color: '#f97316', goal: 'Las 150 palabras del HSK 1: presentarte, números, la hora, la familia y las compras.' },
+    { id: 'hsk2', name: 'HSK 2', color: '#eab308', goal: 'Las 300 palabras del HSK 2: hablar del pasado, comparar, experiencias y planes.' },
+  ],
+  syllabus: [
+    { id: 'z01', level: 'pinyin', title: 'Pinyin y los cuatro tonos', focus: 'Cómo se escribe el chino con letras y por qué el tono cambia el significado.' },
+    { id: 'z02', level: 'pinyin', title: 'Nǐ hǎo: saludar y presentarse', focus: '你好, 我叫…, 我是…人: tus primeras frases y caracteres.' },
+    { id: 'z03', level: 'pinyin', title: 'Trazos y radicales', focus: 'Cómo se construyen los caracteres y el orden de los trazos.' },
+    { id: 'z04', level: 'pinyin', title: 'Los sonidos difíciles', focus: 'zh, ch, sh, r · j, q, x · z, c, s, y el cambio de tono de 不 y 一.' },
+    { id: 'z05', level: 'hsk1', title: 'Números y la edad', focus: 'Contar hasta 99 y 你几岁?' },
+    { id: 'z06', level: 'hsk1', title: 'Preguntas con 吗 y 呢', focus: 'Convertir una frase en pregunta sin cambiar el orden.' },
+    { id: 'z07', level: 'hsk1', title: 'Los verbos 是 y 有', focus: 'Ser y tener (y «hay»).' },
+    { id: 'z08', level: 'hsk1', title: 'Los clasificadores', focus: '一个人, 三本书: la palabra que va entre el número y el nombre.' },
+    { id: 'z09', level: 'hsk1', title: 'La familia y 的', focus: '我的妈妈: la posesión.' },
+    { id: 'z10', level: 'hsk1', title: 'Dónde está: 在', focus: 'Lugares y posiciones.' },
+    { id: 'z11', level: 'hsk1', title: 'La hora y los días', focus: '现在几点? Fechas y días de la semana.' },
+    { id: 'z12', level: 'hsk1', title: 'Querer y poder', focus: '想, 会, 能.' },
+    { id: 'z13', level: 'hsk2', title: 'El pasado con 了', focus: 'Acciones terminadas y cambios.' },
+    { id: 'z14', level: 'hsk2', title: 'Experiencias con 过', focus: '我去过中国: haber hecho algo alguna vez.' },
+    { id: 'z15', level: 'hsk2', title: 'Acciones en curso', focus: '在 / 正在 + verbo.' },
+    { id: 'z16', level: 'hsk2', title: 'Comparar con 比', focus: '他比我高.' },
+    { id: 'z17', level: 'hsk2', title: 'Complementos de grado', focus: '他说得很好: cómo se hace algo.' },
+    { id: 'z18', level: 'hsk2', title: 'Comprar y pedir comida', focus: '多少钱? Regatear y pedir en un restaurante.' },
+    { id: 'z19', level: 'hsk2', title: 'Planes y futuro', focus: '要, 打算, 明天.' },
+    { id: 'z20', level: 'hsk2', title: 'Repaso para el HSK 2', focus: 'Formato del examen y simulacro.' },
+  ],
+};

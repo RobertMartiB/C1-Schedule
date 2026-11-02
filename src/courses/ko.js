@@ -1,0 +1,38 @@
+// Curso de coreano: desde cero hasta el TOPIK I (niveles 1 y 2).
+// Primero el alfabeto hangul (se aprende en pocos días) y después la gramática básica.
+const COURSE_DEF = {
+  id: 'ko',
+  chatTopic: 'coreano desde cero hasta el TOPIK I. Escribe el coreano en hangul con la romanización revisada entre paréntesis y la traducción al español',
+  minutes: { main: 45, read: 20, series: 30, vocab: 20 },
+  readingTitle: 'Leer hangul',
+  readingDetail: 'Busca palabras en hangul (carteles, letras de canciones, menús) y léelas en voz alta. Al principio irás sílaba a sílaba: es normal.',
+  readingLinks: [['Talk To Me In Korean', 'https://talktomeinkorean.com'], ['KBS World: aprender coreano', 'https://world.kbs.co.kr/service/learn_korean.htm?lang=s']],
+  seriesHint: { text: 'Algo en coreano con subtítulos', detail: 'Un dorama o película coreana de tu Jellyfin, con subtítulos. Fíjate en cómo terminan las frases (-요, -니다) según con quién hablan.' },
+  levels: [
+    { id: 'hangul', name: 'Hangul', color: '#8b5cf6', goal: 'Leer y escribir cualquier palabra en coreano.' },
+    { id: 'a1', name: 'Primeros pasos', color: '#ec4899', goal: 'Presentarte, hablar de tu día a día y entender frases sencillas.' },
+    { id: 'topik', name: 'TOPIK I', color: '#f43f5e', goal: 'Pasado, futuro, deseos y conversaciones cotidianas (niveles 1 y 2).' },
+  ],
+  syllabus: [
+    { id: 'k01', level: 'hangul', title: 'Hangul 1: las vocales', focus: 'Cómo funciona el hangul y las vocales básicas ㅏ ㅓ ㅗ ㅜ ㅡ ㅣ.' },
+    { id: 'k02', level: 'hangul', title: 'Hangul 2: las consonantes', focus: 'ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ ㅎ y cómo se forman las sílabas.' },
+    { id: 'k03', level: 'hangul', title: 'Hangul 3: aspiradas y tensas', focus: 'ㅋ ㅌ ㅍ ㅊ · ㄲ ㄸ ㅃ ㅆ ㅉ y las vocales con y (ㅑ ㅕ ㅛ ㅠ).' },
+    { id: 'k04', level: 'hangul', title: 'Hangul 4: la consonante final', focus: 'El batchim y los cambios de sonido al unir sílabas.' },
+    { id: 'k05', level: 'a1', title: 'Saludar y presentarse', focus: '안녕하세요, 저는 … 입니다 / 이에요.' },
+    { id: 'k06', level: 'a1', title: 'Las partículas de tema y sujeto', focus: '은/는 e 이/가: el corazón de la gramática coreana.' },
+    { id: 'k07', level: 'a1', title: 'Los verbos en presente', focus: 'La terminación educada -아요 / -어요.' },
+    { id: 'k08', level: 'a1', title: 'Dos sistemas de números', focus: 'Números sino-coreanos (일, 이, 삼) y nativos (하나, 둘, 셋).' },
+    { id: 'k09', level: 'a1', title: 'El complemento directo', focus: 'La partícula 을/를 y el verbo al final.' },
+    { id: 'k10', level: 'a1', title: 'Lugares: 에 y 에서', focus: 'Ir a, estar en y hacer algo en un sitio.' },
+    { id: 'k11', level: 'a1', title: 'Tener y no tener', focus: '있어요 / 없어요.' },
+    { id: 'k12', level: 'a1', title: 'La negación', focus: '안 y 못: no hacer y no poder.' },
+    { id: 'k13', level: 'topik', title: 'El pasado', focus: '-았어요 / -었어요.' },
+    { id: 'k14', level: 'topik', title: 'Querer hacer algo', focus: '-고 싶어요.' },
+    { id: 'k15', level: 'topik', title: 'Poder hacer algo', focus: '-(으)ㄹ 수 있어요.' },
+    { id: 'k16', level: 'topik', title: 'El futuro', focus: '-(으)ㄹ 거예요.' },
+    { id: 'k17', level: 'topik', title: 'Unir frases', focus: '-고 (y), -지만 (pero), -아서 (porque).' },
+    { id: 'k18', level: 'topik', title: 'Los honoríficos', focus: '-(으)세요: hablar con respeto.' },
+    { id: 'k19', level: 'topik', title: 'Los contadores', focus: '개, 명, 잔, 시: contar cosas, personas y horas.' },
+    { id: 'k20', level: 'topik', title: 'Repaso para el TOPIK I', focus: 'Formato del examen y simulacro.' },
+  ],
+};

@@ -1,0 +1,38 @@
+// Curso de árabe estándar moderno (fusha): desde cero hasta el A2.
+// Primero el alfabeto (letras unidas, de derecha a izquierda) y después la gramática básica.
+const COURSE_DEF = {
+  id: 'ar',
+  chatTopic: 'árabe estándar moderno desde cero hasta el A2. Escribe el árabe con las vocales cortas (harakat) cuando ayude, añade la transcripción entre paréntesis y explica en español',
+  minutes: { main: 45, read: 20, series: 30, vocab: 20 },
+  readingTitle: 'Leer en árabe',
+  readingDetail: 'Busca palabras árabes sencillas (carteles, marcas) y léelas letra a letra, de derecha a izquierda. Fíjate en cómo cambia la forma de cada letra según su posición.',
+  readingLinks: [['Al Jazeera Learning Arabic', 'https://learning.aljazeera.net/en'], ['Madinah Arabic', 'https://www.madinaharabic.com']],
+  seriesHint: { text: 'Algo en árabe con subtítulos', detail: 'Una película o serie en árabe de tu Jellyfin, con subtítulos. Ojo: en las series se suele hablar dialecto (egipcio, levantino…), distinto del árabe estándar de las noticias.' },
+  levels: [
+    { id: 'alifato', name: 'Alfabeto', color: '#14b8a6', goal: 'Leer y escribir las 28 letras en todas sus formas, con las vocales cortas.' },
+    { id: 'a1', name: 'A1', color: '#0ea5e9', goal: 'Presentarte y hablar de ti con frases sencillas.' },
+    { id: 'a2', name: 'A2', color: '#6366f1', goal: 'Usar los verbos en presente y pasado y desenvolverte en situaciones cotidianas.' },
+  ],
+  syllabus: [
+    { id: 'a01', level: 'alifato', title: 'Cómo se escribe el árabe', focus: 'De derecha a izquierda, letras unidas y las primeras letras: ا ب ت ث.' },
+    { id: 'a02', level: 'alifato', title: 'Alfabeto 2: ج ح خ د ذ ر ز', focus: 'Las tres «j» del árabe y las letras que no se unen por la izquierda.' },
+    { id: 'a03', level: 'alifato', title: 'Alfabeto 3: س ش ص ض ط ظ', focus: 'Las letras enfáticas: sonidos que se pronuncian «hacia atrás».' },
+    { id: 'a04', level: 'alifato', title: 'Alfabeto 4: ع غ ف ق ك', focus: 'La famosa ع y la ق del fondo de la garganta.' },
+    { id: 'a05', level: 'alifato', title: 'Alfabeto 5: ل م ن ه و ي', focus: 'Las últimas letras y las vocales largas.' },
+    { id: 'a06', level: 'alifato', title: 'Las vocales cortas y los signos', focus: 'fatha, kasra, damma, sukun y shadda.' },
+    { id: 'a07', level: 'alifato', title: 'El artículo ال y las letras solares', focus: 'al-bayt, pero ash-shams.' },
+    { id: 'a08', level: 'a1', title: 'Saludar y presentarse', focus: 'السلام عليكم، مرحبا، اسمي…' },
+    { id: 'a09', level: 'a1', title: 'Frases sin verbo «ser»', focus: 'أنا طالب: yo estudiante.' },
+    { id: 'a10', level: 'a1', title: 'El género y la ة', focus: 'Masculino y femenino: طالب / طالبة.' },
+    { id: 'a11', level: 'a1', title: 'Los pronombres y los posesivos', focus: 'كتابي، كتابك: el posesivo se pega a la palabra.' },
+    { id: 'a12', level: 'a1', title: 'Los números', focus: 'Los números árabes (٣ ٢ ١) y cómo se dicen.' },
+    { id: 'a13', level: 'a1', title: 'Preguntas', focus: 'ما، من، أين، متى، كيف، هل.' },
+    { id: 'a14', level: 'a2', title: 'El verbo en presente', focus: 'يكتب، أكتب، تكتب: los prefijos del presente.' },
+    { id: 'a15', level: 'a2', title: 'El verbo en pasado', focus: 'كتب، كتبت: los sufijos del pasado.' },
+    { id: 'a16', level: 'a2', title: 'Las raíces de tres letras', focus: 'ك ت ب: كتاب، مكتب، كاتب. La clave del vocabulario árabe.' },
+    { id: 'a17', level: 'a2', title: 'El plural', focus: 'Plurales regulares y los «plurales rotos».' },
+    { id: 'a18', level: 'a2', title: 'La idafa', focus: 'باب البيت: la puerta de la casa.' },
+    { id: 'a19', level: 'a2', title: 'Adjetivos y concordancia', focus: 'البيت الكبير: el adjetivo detrás del nombre.' },
+    { id: 'a20', level: 'a2', title: 'Repaso del A2', focus: 'Lectura de textos cortos y simulacro.' },
+  ],
+};
