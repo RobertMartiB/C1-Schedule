@@ -22,7 +22,7 @@ const COURSES = {
     files: ['courses/ja.js', 'units-ja/j01.js', 'units-ja/j02.js', 'units-ja/j03.js', 'units-ja/j04.js', 'units-ja/j05.js'],
   },
   zh: course('zh', 'ZH', 'Chino mandarín', 'Desde cero hasta el HSK 2', '#ef4444', 'zh-CN', /^(zh|chi|zho|cmn)$|chinese|chino|mandarin/i, 'en chino', ['courses/zh.js', 'units-zh/z01.js', 'units-zh/z02.js']),
-  ko: course('ko', 'KO', 'Coreano', 'Desde cero hasta el TOPIK I', '#8b5cf6', 'ko-KR', /^(ko|kor)$|korean|corea/i, 'en coreano', ['courses/ko.js', 'units-ko/k01.js', 'units-ko/k02.js']),
+  ko: course('ko', 'KO', 'Coreano', 'Desde cero hasta el TOPIK I', '#8b5cf6', 'ko-KR', /^(ko|kor)$|korean|corea/i, 'en coreano', ['courses/ko.js', 'units-ko/k01.js', 'units-ko/k02.js', 'units-ko/k03.js']),
   ru: course('ru', 'RU', 'Ruso', 'Desde cero hasta el A2', '#f97316', 'ru-RU', /^(ru|rus)$|russian|ruso/i, 'en ruso', ['courses/ru.js', 'units-ru/r01.js', 'units-ru/r02.js']),
   ar: course('ar', 'AR', 'Árabe', 'Árabe estándar desde cero hasta el A2', '#14b8a6', 'ar-SA', /^(ar|ara)$|arabic|árabe|arabe/i, 'en árabe', ['courses/ar.js', 'units-ar/a01.js', 'units-ar/a02.js']),
 };
