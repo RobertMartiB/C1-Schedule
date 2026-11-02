@@ -136,7 +136,7 @@ El botón de arriba a la izquierda abre un chat pequeño para preguntar dudas y 
 
 | Curso | Niveles | Unidades escritas |
 |---|---|---|
-| **Inglés** · de B1 a C1 Advanced (Cambridge) | B1+ · B2 · C1 · Examen (formato y simulacros) | 9 de 26 |
+| **Inglés** · de B1 a C1 Advanced (Cambridge) | B1+ · B2 · C1 · Examen (formato y simulacros) | 10 de 26 |
 | **Francés** · desde cero hasta el B1 | A1 · A2 · B1 | 3 de 24 |
 | **Alemán** · desde cero hasta el B1 | A1 · A2 · B1 | 3 de 24 |
 | **Italiano** · desde cero hasta el B1 | A1 · A2 · B1 | 3 de 24 |
