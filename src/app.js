@@ -32,15 +32,42 @@ const shortDate = s => { const d = parse(s); return `${d.getDate()} ${MONTHS[d.g
 const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / 864e5);
 
 // ---- Bloques de cada día (3 horas) ----
+// Una sesión de unidad cuenta como hecha en cuanto la completas en la unidad (no hace falta marcarla).
+function sessionDone(uid, session) {
+  const st = unitStatus(uid);
+  if (!st.ready) return false;
+  return session === 'teoria' ? st.theory : session === 'practica' ? st.exOk === st.exTotal : session === 'lectura' ? st.reading : false;
+}
+// Primer paso pendiente desde una unidad: su sesión sin hacer o la teoría de la siguiente unidad.
+function nextStep(uid) {
+  for (let i = SYLLABUS.findIndex(u => u.id === uid); i >= 0 && i < SYLLABUS.length; i++) {
+    const u = SYLLABUS[i];
+    if (!UNITS[u.id]) return null;
+    const ses = ['teoria', 'practica', 'lectura'].find(x => !sessionDone(u.id, x));
+    if (ses) return { unit: u.id, session: ses };
+  }
+  return null;
+}
+function unitBlock(uid, session, id, kickerPrefix = '') {
+  const u = unitById(uid), ses = SESSION[session], n = SYLLABUS.indexOf(u) + 1;
+  const ic = { teoria: 'open', practica: 'pencil', lectura: 'search', repaso: 'repeat' }[session];
+  return { id, min: 60, icon: ic, kicker: `${kickerPrefix}Unidad ${n} · ${ses.label}`, text: u.title, detail: ses.detail, link: `#unidad/${u.id}/${ses.tab}`, ready: !!UNITS[u.id], auto: sessionDone(uid, session), cta: session === 'teoria' ? 'Empezar la teoría' : session === 'practica' ? 'Hacer los ejercicios' : session === 'lectura' ? 'Abrir la lectura' : 'Repasar' };
+}
+const blockDone = (s, b) => b.auto || isDone(s, b.id);
+
 function dayBlocks(s) {
   const d = SCHEDULE[s];
   if (!d || d.rest) return [];
   const blocks = [];
   const m = d.main;
   if (m.kind === 'unit') {
-    const u = unitById(m.unit), ses = SESSION[m.session], n = SYLLABUS.indexOf(u) + 1;
-    const ic = { teoria: 'open', practica: 'pencil', lectura: 'search', repaso: 'repeat' }[m.session];
-    blocks.push({ id: 'main', min: 60, icon: ic, kicker: `Unidad ${n} · ${ses.label}`, text: u.title, detail: ses.detail, link: `#unidad/${u.id}/${ses.tab}`, ready: !!UNITS[u.id], cta: m.session === 'teoria' ? 'Empezar la teoría' : m.session === 'practica' ? 'Hacer los ejercicios' : m.session === 'lectura' ? 'Abrir la lectura' : 'Repasar' });
+    const main = unitBlock(m.unit, m.session, 'main');
+    blocks.push(main);
+    // Si hoy ya está hecho lo que tocaba, se propone el siguiente paso para adelantar
+    if (s === today() && blockDone(s, main)) {
+      const nx = nextStep(m.unit);
+      if (nx && !(nx.unit === m.unit && nx.session === m.session)) blocks.push({ ...unitBlock(nx.unit, nx.session, 'ahead', 'Para adelantar · '), extra: true });
+    }
   } else {
     const ic = m.kind === 'mock' ? 'timer' : m.kind === 'leveltest' ? 'trophy' : m.kind === 'exam' ? 'flag' : 'repeat';
     blocks.push({ id: 'main', min: m.kind === 'mock' ? 235 : 60, icon: ic, kicker: m.kind === 'mock' ? 'Simulacro' : m.kind === 'exam' ? 'Formato del examen' : 'Repaso', text: m.text.replace(/^Formato del examen: /, ''), detail: m.detail, ready: true });
@@ -65,9 +92,9 @@ function toggleDone(s, id) {
   store.set(st => { const set = new Set(st.done[s] || []); set.has(id) ? set.delete(id) : set.add(id); st.done[s] = [...set]; });
 }
 function dayStatus(s) {
-  const b = dayBlocks(s);
+  const b = dayBlocks(s).filter(x => !x.extra);
   if (!b.length) return 'none';
-  const n = b.filter(x => isDone(s, x.id)).length;
+  const n = b.filter(x => blockDone(s, x)).length;
   if (n === b.length) return 'done';
   if (n > 0) return 'partial';
   return s < today() ? 'missed' : 'todo';
@@ -114,9 +141,10 @@ function renderToday(main, args) {
   const lvPct = Math.max(0, Math.min(100, Math.round(lvDays.filter(x => x < t).length / lvDays.length * 100)));
   const toStart = daysBetween(t, PLAN_START);
   const isToday = s === t;
-  const pending = blocks.filter(b => !isDone(s, b.id));
+  const core = blocks.filter(b => !b.extra);
+  const pending = blocks.filter(b => !blockDone(s, b));
   const next = pending[0];
-  const left = pending.reduce((a, b) => a + b.min, 0);
+  const left = pending.filter(b => !b.extra).reduce((a, b) => a + b.min, 0);
   const hour = new Date().getHours();
   const hello = hour < 6 ? 'Buenas noches' : hour < 14 ? 'Buenos días' : hour < 21 ? 'Buenas tardes' : 'Buenas noches';
   const name = userName();
@@ -158,17 +186,17 @@ function renderToday(main, args) {
         ${next.input ? `<button class="primary watch" data-act="watch">${icon('play')}${next.cta}</button>`
           : next.link ? (next.ready ? `<a class="btn primary" href="${next.link}">${next.cta || 'Abrir'}${icon('arrow')}</a>` : `<span class="muted small">Esta unidad aún no está lista: pídele a Claude que la prepare.</span>`)
           : next.ext ? next.ext.map(([n, u], i) => `<a class="btn ${i ? '' : 'primary'}" href="${u}" target="_blank" rel="noopener">${n}</a>`).join('') : ''}
-        <button class="ghostbtn" data-done="${next.id}">${icon('check')}Marcar como hecho</button>
+        ${next.link && next.ready ? '' : `<button class="ghostbtn" data-done="${next.id}">${icon('check')}Marcar como hecho</button>`}
       </div>
     </section>` : `
     <section class="next done-all">${icon('trophy')}<div><h2>Día completado</h2><p class="muted">Buen trabajo. Mañana más.</p></div></section>`}
 
     <section class="plan">
-      <div class="plan-head"><h3>Plan del día</h3><span class="muted small">${blocks.length - pending.length} de ${blocks.length}${left ? ` · quedan ${fmtMin(left)}` : ''}</span></div>
-      <div class="segs">${blocks.map(b => `<i class="${isDone(s, b.id) ? 'on' : ''}"></i>`).join('')}</div>
+      <div class="plan-head"><h3>Plan del día</h3><span class="muted small">${core.filter(b => blockDone(s, b)).length} de ${core.length}${left ? ` · quedan ${fmtMin(left)}` : ''}</span></div>
+      <div class="segs">${core.map(b => `<i class="${blockDone(s, b) ? 'on' : ''}"></i>`).join('')}</div>
       <ul class="rows">
-        ${blocks.map(b => `<li class="${isDone(s, b.id) ? 'done' : ''} ${b === next ? 'current' : ''}">
-          <button class="tick" data-done="${b.id}" aria-label="${isDone(s, b.id) ? 'Desmarcar' : 'Marcar como hecho'}">${icon('check')}</button>
+        ${blocks.map(b => `<li class="${blockDone(s, b) ? 'done' : ''} ${b === next ? 'current' : ''} ${b.extra ? 'extra' : ''}">
+          <button class="tick" data-done="${b.id}" ${b.auto ? 'data-auto="1"' : ''} aria-label="${blockDone(s, b) ? 'Desmarcar' : 'Marcar como hecho'}">${icon('check')}</button>
           <button class="rowmain" data-open="${b.id}">
             <span class="ric">${icon(b.icon)}</span>
             <span class="rt"><small>${esc(b.kicker)}</small><b>${esc(b.text)}</b></span>
@@ -185,7 +213,10 @@ function renderToday(main, args) {
 
   $('#prev').onclick = () => { location.hash = `hoy/${addDays(s, -1)}`; };
   $('#next').onclick = () => { location.hash = `hoy/${addDays(s, 1)}`; };
-  main.querySelectorAll('[data-done]').forEach(b => b.onclick = () => { toggleDone(s, b.dataset.done); renderToday(main, [s]); });
+  main.querySelectorAll('[data-done]').forEach(b => b.onclick = () => {
+    if (b.dataset.auto) { toast('Esto se marca solo al terminarlo en la unidad.'); return; }
+    toggleDone(s, b.dataset.done); renderToday(main, [s]);
+  });
   main.querySelectorAll('[data-open]').forEach(b => b.onclick = () => {
     const blk = blocks.find(x => x.id === b.dataset.open);
     if (blk.input) return watchToday(blk.input, b);

@@ -35,14 +35,37 @@ function renderUnit(main, id, tab = 'teoria') {
     return;
   }
   const st = unitStatus(id);
-  const tabs = [['teoria', `${icon('open')}Teoría`, st.theory], ['practica', `${icon('pencil')}Práctica <span class="cnt">${st.exOk}/${st.exTotal}</span>`, st.exOk === st.exTotal], ['lectura', `${icon('search')}Lectura`, st.reading]];
+  const locked = st.exOk < st.exTotal && !st.reading;
+  const tabs = [['teoria', `${icon('open')}Teoría`, st.theory], ['practica', `${icon('pencil')}Práctica <span class="cnt">${st.exOk}/${st.exTotal}</span>`, st.exOk === st.exTotal], ['lectura', `${icon(locked ? 'lock' : 'search')}Lectura`, st.reading]];
   main.innerHTML = head + `
-    <nav class="tabs">${tabs.map(([t, label, ok]) => `<a href="#unidad/${id}/${t}" class="${t === tab ? 'on' : ''}">${label}${ok ? icon('check', 'ok') : ''}</a>`).join('')}</nav>
-    <div id="tabbody"></div>`;
+    <nav class="tabs">${tabs.map(([t, label, ok]) => `<a href="#unidad/${id}/${t}" class="${t === tab ? 'on' : ''} ${t === 'lectura' && locked ? 'locked' : ''}">${label}${ok ? icon('check', 'ok') : ''}</a>`).join('')}</nav>
+    <div id="tabbody"></div>
+    ${tab !== 'teoria' ? `<button class="theory-fab" id="theoryFab">${icon('open')}<span>Teoría</span></button>` : ''}`;
   const body = $('#tabbody');
   if (tab === 'practica') renderPractice(body, id);
-  else if (tab === 'lectura') renderReading(body, id);
+  else if (tab === 'lectura') { if (locked) renderGate(body, id); else renderReading(body, id); }
   else renderTheory(body, id);
+  $('#theoryFab')?.addEventListener('click', () => openTheoryDrawer(id));
+}
+
+// ---------- Teoría en un panel lateral (para consultarla sin salir) ----------
+function openTheoryDrawer(id) {
+  let dlg = $('#theorydlg');
+  if (!dlg) { dlg = document.createElement('dialog'); dlg.id = 'theorydlg'; document.body.appendChild(dlg); dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); }); }
+  const meta = unitById(id), u = UNITS[id];
+  dlg.innerHTML = `<div class="drawer">
+    <div class="drawer-head"><div><span class="overline">Teoría</span><h2>${esc(meta.title)}</h2></div><button class="icon" id="tdclose" aria-label="Cerrar">${icon('x')}</button></div>
+    <div class="theory">${u.theory.map(sec => `<section><h2>${esc(sec.h)}</h2>${sec.html}</section>`).join('')}</div>${roleLegend()}</div>`;
+  dlg.showModal();
+  $('#tdclose').onclick = () => dlg.close();
+}
+
+// ---------- La lectura se desbloquea al acertar toda la práctica ----------
+function renderGate(body, id) {
+  const st = unitStatus(id), left = st.exTotal - st.exOk;
+  body.innerHTML = `<div class="gate">${icon('lock')}<h2>Antes, acierta toda la práctica</h2>
+    <p>Te ${left === 1 ? 'queda <b>1 ejercicio</b>' : `quedan <b>${left} ejercicios</b>`} por acertar. Así llegas a la lectura con la gramática bien asentada.</p>
+    <a class="btn primary" href="#unidad/${id}/practica">${icon('pencil')}Ir a mis fallos</a></div>`;
 }
 
 // ---------- Teoría ----------
@@ -65,10 +88,20 @@ function renderPractice(body, id, onlyWrong = false) {
       <p class="muted">Corrige cada ejercicio al momento. Lee siempre la explicación, aunque aciertes.</p>
       <div class="row">${onlyWrong ? '<button id="all">Ver todos</button>' : wrong ? `<button id="wrongonly">Rehacer mis ${wrong} fallos</button>` : ''}<button id="resetex">Empezar de cero</button></div>
     </div>
-    <ol class="exlist">${list.map(({ ex, i }) => `<li class="exitem" data-i="${i}">${exerciseHtml(ex, i)}</li>`).join('') || '<p class="empty">¡No tienes fallos pendientes!</p>'}</ol>
-    <div class="row end"><a class="btn primary" href="#unidad/${id}/lectura">Ir a la lectura →</a></div>`;
+    <ol class="exlist">${list.map(({ ex, i }) => `<li class="exitem ${p.ex?.[i] === true ? 'was-ok' : p.ex?.[i] === false ? 'was-bad' : ''}" data-i="${i}">${exStateTag(p.ex?.[i])}${exerciseHtml(ex, i)}</li>`).join('') || '<p class="empty">¡No tienes fallos pendientes!</p>'}</ol>
+    <div id="pracsum"></div>`;
+  const drawSum = () => {
+    const pr = progress(id), bad = u.exercises.filter((_, i) => pr.ex?.[i] === false).length, todo = u.exercises.filter((_, i) => pr.ex?.[i] === undefined).length;
+    $('#pracsum').innerHTML = bad || todo
+      ? `<div class="sumbox bad">${icon('info')}<div><b>${bad ? `${bad} ${bad === 1 ? 'ejercicio fallado' : 'ejercicios fallados'}` : ''}${bad && todo ? ' · ' : ''}${todo ? `${todo} sin hacer` : ''}</b><p>Para pasar a la lectura tienes que acertarlos todos.</p></div>${bad ? '<button class="primary" id="redo">Repetir los fallos</button>' : ''}</div>`
+      : `<div class="sumbox ok">${icon('check')}<div><b>¡Práctica completa!</b><p>Todos los ejercicios acertados.</p></div><a class="btn primary" href="#unidad/${id}/lectura">Ir a la lectura${icon('arrow')}</a></div>`;
+    $('#redo')?.addEventListener('click', () => renderPractice(body, id, true));
+  };
+  drawSum();
   body.querySelectorAll('.exitem').forEach(li => bindExercise(li, u.exercises[li.dataset.i], ok => {
     setProgress(id, pr => { (pr.ex ||= {})[li.dataset.i] = ok; });
+    li.classList.toggle('was-ok', ok); li.classList.toggle('was-bad', !ok); li.querySelector('.state')?.remove();
+    drawSum();
     const tabsEl = document.querySelector('.tabs a:nth-child(2)'); const st = unitStatus(id);
     if (tabsEl) tabsEl.innerHTML = `${icon('pencil')}Práctica <span class="cnt">${st.exOk}/${st.exTotal}</span>${st.exOk === st.exTotal ? icon('check', 'ok') : ''}`;
   }));
@@ -80,7 +113,44 @@ function renderPractice(body, id, onlyWrong = false) {
   };
 }
 
+// Explica cada palabra mal elegida según el papel que tiene en la frase.
+function findHints(parts, selected, target) {
+  const toks = tokensOf(parts), msgs = [], seenParts = new Set();
+  const clean = w => w.replace(/[.,;:!?"“”]/g, '');
+  const partText = pi => parts[pi][1].replace(/[.,;:]$/, '');
+  for (const k of selected) {
+    const t = toks[k];
+    if (t.role === target || seenParts.has(t.pi)) continue;
+    seenParts.add(t.pi);
+    const w = clean(t.w), prev = clean(toks[k - 1]?.w || '').toLowerCase(), first = partText(t.pi).split(/\s+/)[0];
+    const isInf = w.toLowerCase() === 'to' || prev === 'to';
+    if (target === 'V') {
+      if (isInf) msgs.push(`<b>«${esc(w.toLowerCase() === 'to' ? 'to ' + clean(toks[k + 1]?.w || '') : 'to ' + w)}»</b> es un <b>infinitivo</b> (to + verbo): no está conjugado, así que no puede ser el verbo principal. Depende de otro verbo.`);
+      else if (t.role === 'R') msgs.push(`<b>«${esc(w)}»</b> está dentro de una <b>oración secundaria</b> («${esc(partText(t.pi))}»). Empieza por <i>${esc(first)}</i> y solo añade información. Tapa esa pieza: el verbo principal está fuera.`);
+      else if (/ing$/i.test(w) && t.role !== 'V') msgs.push(`<b>«${esc(w)}»</b> acaba en -ing y no lleva auxiliar delante (am/is/are/was…): funciona como nombre o adjetivo, no como verbo principal.`);
+      else if (t.role === 'S') msgs.push(`<b>«${esc(partText(t.pi))}»</b> es el <b>sujeto</b>: quién hace la acción. El verbo principal va justo después.`);
+      else if (t.role === 'O') msgs.push(`<b>«${esc(partText(t.pi))}»</b> es lo que <b>completa</b> al verbo: va detrás de él.`);
+      else if (t.role === 'C') msgs.push(`<b>«${esc(w)}»</b> es un <b>conector</b>: une o relaciona ideas, no es un verbo.`);
+      else msgs.push(`<b>«${esc(partText(t.pi))}»</b> es <b>información extra</b> (lugar, tiempo, modo…): si la quitas, la frase sigue funcionando.`);
+    } else if (target === 'S') {
+      if (t.role === 'R') msgs.push(`<b>«${esc(partText(t.pi))}»</b> es una oración secundaria que cuelga del sujeto: dice <i>cuál</i>, pero no es el núcleo.`);
+      else if (t.role === 'V') msgs.push(`<b>«${esc(w)}»</b> es el <b>verbo</b>. El sujeto es lo que va justo delante de él.`);
+      else if (t.role === 'X') msgs.push(`<b>«${esc(partText(t.pi))}»</b> va detrás de una preposición o indica cuándo/dónde: <b>nunca</b> es el sujeto.`);
+      else msgs.push(`<b>«${esc(w)}»</b> no es el sujeto. Pregúntale al verbo «¿quién?» o «¿qué?».`);
+    } else {
+      msgs.push(`<b>«${esc(w)}»</b> es <b>${ROLE[t.role].name.toLowerCase()}</b>, no ${ROLE[target].name.toLowerCase()}.`);
+    }
+  }
+  const want = toks.map((t, k) => (t.role === target ? k : -1)).filter(k => k >= 0);
+  const missing = want.filter(k => !selected.has(k));
+  if (missing.length && missing.length < want.length) msgs.push(`Te ha faltado una parte: <b>«${esc(want.map(k => toks[k].w).join(' ').replace(/[.,]$/, ''))}»</b> va entero (el auxiliar forma un bloque con el verbo).`);
+  else if (missing.length && !selected.size) msgs.push(`No has marcado nada. La respuesta es <b>«${esc(want.map(k => toks[k].w).join(' ').replace(/[.,]$/, ''))}»</b>.`);
+  return msgs;
+}
+
 const tokensOf = parts => parts.flatMap(([role, text], pi) => text.split(/\s+/).filter(Boolean).map(w => ({ w, role, pi })));
+
+const exStateTag = st => st === true ? `<span class="state ok">${icon('check')}Acertado</span>` : st === false ? `<span class="state bad">${icon('repeat')}Fallado: vuelve a intentarlo</span>` : '';
 
 function exerciseHtml(ex, i) {
   const fb = '<div class="fb" hidden></div>';
@@ -98,7 +168,7 @@ function bindExercise(li, ex, onResult) {
   const fb = li.querySelector('.fb');
   const show = (ok, extra = '') => {
     fb.hidden = false; fb.className = 'fb ' + (ok ? 'ok' : 'bad');
-    fb.innerHTML = `<b>${ok ? 'Correcto.' : 'No es correcto.'}</b> ${extra}${ex.why ? ` <span class="why">${esc(ex.why)}</span>` : ''}`;
+    fb.innerHTML = `<b>${ok ? 'Correcto.' : 'No es correcto.'}</b> ${extra}${ex.why ? ` <span class="why">${ok ? '' : '<span class="lab">Explicación</span>'}${esc(ex.why)}</span>` : ''}`;
     onResult(ok);
   };
   if (ex.type === 'mcq') {
@@ -106,7 +176,7 @@ function bindExercise(li, ex, onResult) {
       const j = Number(b.dataset.j), ok = j === ex.a;
       li.querySelectorAll('.choice').forEach(x => { x.disabled = true; if (Number(x.dataset.j) === ex.a) x.classList.add('right'); });
       if (!ok) b.classList.add('wrong');
-      show(ok);
+      show(ok, ok ? '' : `Has elegido <b>«${esc(ex.opts ? ex.opts[j] : b.textContent)}»</b>; la correcta es <b>«${esc(ex.opts ? ex.opts[ex.a] : '')}»</b>.`);
     });
   } else if (ex.type === 'gap') {
     const inp = li.querySelector('.gapin');
@@ -128,7 +198,8 @@ function bindExercise(li, ex, onResult) {
       const want = new Set(toks.map((t, k) => (t.role === ex.role ? k : -1)).filter(k => k >= 0));
       const ok = sel.size === want.size && [...want].every(k => sel.has(k));
       li.querySelectorAll('.tok').forEach(t => { t.disabled = true; t.classList.add(ROLE[toks[t.dataset.k].role].cls); });
-      show(ok, ok ? '' : `Lo que buscabas está marcado como <span class="${ROLE[ex.role].cls}">${ROLE[ex.role].name.toLowerCase()}</span>.`);
+      const hints = ok ? [] : findHints(ex.parts, sel, ex.role);
+      show(ok, ok ? '' : `<ul class="hints">${hints.map(h => `<li>${h}</li>`).join('')}</ul>`);
     };
   }
 }
@@ -148,7 +219,9 @@ function renderReading(body, id) {
     </article>
     <div id="breakdown"></div>
     <h2>Preguntas de comprensión</h2>
-    <ol class="exlist">${r.questions.map((q, i) => `<li class="exitem" data-q="${i}">${exerciseHtml({ type: 'mcq', q: esc(q.q), opts: q.opts }, i)}</li>`).join('')}</ol>`;
+    <ol class="exlist">${r.questions.map((q, i) => `<li class="exitem" data-q="${i}">${exerciseHtml({ type: 'mcq', q: esc(q.q), opts: q.opts }, i)}</li>`).join('')}</ol>
+    <div id="rsummary"></div>`;
+  if (p.reading) readingSummary($('#rsummary'), id);
   const open = k => {
     body.querySelectorAll('.sent').forEach(x => x.classList.toggle('active', Number(x.dataset.k) === k));
     drawBreakdown($('#breakdown'), id, k);
@@ -161,9 +234,10 @@ function renderReading(body, id) {
   const answered = new Set();
   body.querySelectorAll('[data-q]').forEach(li => {
     const q = r.questions[li.dataset.q];
-    bindExercise(li, { type: 'mcq', a: q.a, why: '' }, () => {
+    bindExercise(li, { type: 'mcq', a: q.a, opts: q.opts, why: '' }, ok => {
       answered.add(li.dataset.q);
-      if (answered.size === r.questions.length) { setProgress(id, pr => { pr.reading = true; }); toast('¡Lectura completada!'); }
+      setProgress(id, pr => { (pr.rq ||= {})[li.dataset.q] = ok; });
+      if (answered.size === r.questions.length) { setProgress(id, pr => { pr.reading = true; }); readingSummary($('#rsummary'), id); }
     });
   });
 }
@@ -178,11 +252,16 @@ function drawBreakdown(box, id, k) {
       ${hasV ? `<p class="small muted">Reto: toca el verbo principal (o los verbos principales, si la frase tiene varias partes unidas por <i>and</i>, <i>or</i> o dos puntos).</p>
       <div class="tokens">${toks.map((t, n) => `<button class="tok" data-n="${n}">${esc(t.w)}</button>`).join(' ')}</div>
       <div class="row"><button id="bdcheck">Comprobar</button><button id="bdshow">Ver solución</button></div>` : ''}
+      <div class="fb bad" id="bdhints" hidden></div>
       <div id="bdsol" ${hasV ? 'hidden' : ''}>
         <div class="parts">${s.parts.map(([role, text]) => `<span class="part ${ROLE[role].cls}" title="${ROLE[role].name}">${esc(text)}<small>${ROLE[role].name}</small></span>`).join('')}</div>
         <p class="es"><span class="lab">Traducción</span>${esc(s.es)}</p>
         <p class="note">${icon('bulb')}<span>${esc(s.note)}</span></p>
         ${s.vocab?.length ? `<ul class="vocab">${s.vocab.map(([w, es]) => `<li><b>${esc(w)}</b> — ${esc(es)} ${Vocab.addButton(w, es, sentenceText(s))}</li>`).join('')}</ul>` : ''}
+        <div class="wordpick"><span class="lab">¿Otra palabra? Tócala para guardarla</span>
+          <div class="wp-words">${toks.map(t => t.w.replace(/[.,;:!?"“”()]/g, '')).filter(w => w.length > 2).map(w => `<button class="wp" data-w="${esc(w)}">${esc(w)}</button>`).join('')}</div>
+          <form class="wp-form" hidden><input class="wp-w" aria-label="Palabra"><input class="wp-es" placeholder="Significado en español" aria-label="Significado"><button class="primary" type="submit">${icon('plus')}Guardar</button></form>
+        </div>
         <div class="row between">
           ${k > 0 ? `<button id="bdprev">← Frase anterior</button>` : '<span></span>'}
           ${k < r.sentences.length - 1 ? `<button class="primary" id="bdnext">Siguiente frase →</button>` : '<span class="muted small">Última frase. Ahora contesta las preguntas.</span>'}
@@ -200,14 +279,89 @@ function drawBreakdown(box, id, k) {
     const sel = new Set([...box.querySelectorAll('.tok.sel')].map(t => Number(t.dataset.n)));
     const want = toks.map((t, n) => (t.role === 'V' ? n : -1)).filter(n => n >= 0);
     const ok = sel.size === want.length && want.every(n => sel.has(n));
-    toast(ok ? '¡Bien! Ese es el esqueleto.' : 'Casi. Mira la solución: el verbo principal va en rojo.');
+    const cats = new Set();
+    for (const n of sel) {
+      const t = toks[n], w = t.w.replace(/[^A-Za-z']/g, '').toLowerCase(), prev = (toks[n - 1]?.w || '').replace(/[^A-Za-z]/g, '').toLowerCase();
+      if (t.role === 'V') continue;
+      if (w === 'to' || prev === 'to' || (/ing$/.test(w) && w.length > 4)) cats.add('inf');
+      else cats.add({ R: 'R', S: 'S', O: 'O', C: 'C', X: 'X' }[t.role]);
+    }
+    if (want.some(n => !sel.has(n)) && want.some(n => sel.has(n))) cats.add('miss');
+    if (!sel.size) cats.add('S');
+    setProgress(id, p => { (p.rd ||= {})[k] = ok ? 'ok' : { cats: [...cats] }; });
+    toast(ok ? '¡Bien! Ese es el esqueleto.' : 'Casi. Mira abajo por qué.');
     reveal();
+    if (!ok) { const h = findHints(s.parts, sel, 'V'); $('#bdhints').hidden = false; $('#bdhints').innerHTML = `<b>Por qué no:</b><ul class="hints">${h.map(x => `<li>${x}</li>`).join('')}</ul>`; }
   });
-  $('#bdshow')?.addEventListener('click', reveal);
+  $('#bdshow')?.addEventListener('click', () => { setProgress(id, p => { (p.rd ||= {})[k] ??= 'skip'; }); reveal(); });
   $('#bdclose').onclick = () => { box.innerHTML = ''; document.querySelectorAll('.sent.active').forEach(x => x.classList.remove('active')); };
   $('#bdprev')?.addEventListener('click', () => { document.querySelector(`.sent[data-k="${k - 1}"]`).click(); });
   $('#bdnext')?.addEventListener('click', () => { document.querySelector(`.sent[data-k="${k + 1}"]`).click(); });
   Vocab.bindAddButtons(box);
+  const form = box.querySelector('.wp-form');
+  box.querySelectorAll('.wp').forEach(b => b.onclick = () => {
+    form.hidden = false; form.querySelector('.wp-w').value = b.dataset.w.toLowerCase();
+    const known = (s.vocab || []).find(([w]) => w.toLowerCase().split(/[ (]/)[0] === b.dataset.w.toLowerCase());
+    form.querySelector('.wp-es').value = known ? known[1] : ''; form.querySelector('.wp-es').focus();
+  });
+  if (form) form.onsubmit = e => {
+    e.preventDefault();
+    const w = form.querySelector('.wp-w').value, es = form.querySelector('.wp-es').value;
+    if (Vocab.add(w, es, sentenceText(s))) { toast(`"${w}" guardada en tus tarjetas`); form.hidden = true; }
+    else toast(es.trim() ? 'Esa palabra ya está en tus tarjetas.' : 'Escribe el significado.');
+  };
+}
+
+// ---------- Resumen al terminar la lectura ----------
+const REVIEW = {
+  R: ['Oraciones secundarias', 'El verbo que va detrás de who, which, that, because, when, if… no es el principal: tapa esa pieza.', 'u01'],
+  inf: ['Infinitivos y formas en -ing', '"to + verbo" y las formas en -ing sin auxiliar no son verbos conjugados.', 'u08'],
+  S: ['Sujeto y verbo', 'El sujeto va justo delante del verbo principal; el verbo es lo que viene después.', 'u01'],
+  O: ['Complementos', 'Lo que va detrás del verbo lo completa (qué, a quién…): no es el verbo.', 'u01'],
+  C: ['Conectores', 'and, but, so, however… unen ideas; no son verbos.', 'u05'],
+  X: ['Información extra', 'Lo que va detrás de una preposición (in, at, for…) o indica cuándo/dónde nunca es sujeto ni verbo.', 'u01'],
+  miss: ['Verbos con auxiliar', 'El verbo principal incluye sus auxiliares: has lived, was built, can remember.', 'u03'],
+  skip: ['Frases sin intentar', 'Antes de ver la solución, intenta siempre encontrar tú el verbo: es lo que entrena la lectura.', null],
+};
+function readingSummary(box, id) {
+  const u = UNITS[id], r = u.reading, p = progress(id), rd = p.rd || {}, rq = p.rq || {};
+  const tried = Object.keys(rd).length, okS = Object.values(rd).filter(v => v === 'ok').length;
+  const badQ = r.questions.map((q, i) => ({ q, i })).filter(({ i }) => rq[i] === false);
+  const badS = r.sentences.map((s, k) => ({ s, k, v: rd[k] })).filter(x => x.v && x.v !== 'ok');
+  const cats = new Set();
+  for (const { v } of badS) {
+    if (v === 'skip') { cats.add('skip'); continue; }
+    (v.cats || []).forEach(c => cats.add(c));
+  }
+  // Palabras: las de las frases que costaron primero, luego el resto que aún no tienes
+  const words = [];
+  const pushW = (w, es, ex) => { if (!words.some(x => x.w === w) && !Vocab.has(w)) words.push({ w, es, ex }); };
+  badS.forEach(({ s }) => (s.vocab || []).forEach(([w, es]) => pushW(w, es, sentenceText(s))));
+  r.sentences.forEach(s => (s.vocab || []).forEach(([w, es]) => pushW(w, es, sentenceText(s))));
+  const perfect = !badS.length && !badQ.length && tried === r.sentences.length;
+  box.innerHTML = `
+    <section class="rsum">
+      <div class="rsum-head">${icon(perfect ? 'trophy' : 'sparkle')}<div><span class="overline">Resumen de la lectura</span><h2>${perfect ? '¡Lectura perfecta!' : 'Lectura terminada'}</h2></div></div>
+      <div class="rsum-stats">
+        <div><b>${okS}/${r.sentences.length}</b><span>frases desmontadas a la primera</span></div>
+        <div><b>${r.questions.length - badQ.length}/${r.questions.length}</b><span>preguntas de comprensión</span></div>
+      </div>
+      ${cats.size ? `<h3>Lo que tienes que repasar</h3><ul class="review">${[...cats].map(c => `<li><b>${REVIEW[c][0]}</b><span>${REVIEW[c][1]}</span>${REVIEW[c][2] ? `<a href="#libro/${REVIEW[c][2]}">Ver en el libro${icon('arrow')}</a>` : ''}</li>`).join('')}</ul>` : ''}
+      ${badS.filter(x => x.v !== 'skip').length ? `<h3>Frases que te costaron</h3><ul class="hardlist">${badS.filter(x => x.v !== 'skip').map(({ s }) => `<li><p>${s.parts.map(([role, t]) => `<span class="${ROLE[role].cls}">${esc(t)}</span>`).join(' ')}</p><small>${esc(s.note)}</small></li>`).join('')}</ul>` : ''}
+      ${badQ.length ? `<h3>Preguntas falladas</h3><ul class="hardlist">${badQ.map(({ q }) => `<li><p>${esc(q.q)}</p><small>Respuesta: ${esc(q.opts[q.a])}</small></li>`).join('')}</ul>` : ''}
+      ${words.length ? `<h3>Palabras para tus tarjetas</h3>
+        <div class="pickwords">${words.map((x, i) => `<label class="pw"><input type="checkbox" data-i="${i}" ${i < 12 ? 'checked' : ''}><b>${esc(x.w)}</b><span>${esc(x.es)}</span></label>`).join('')}</div>
+        <button class="primary" id="addsel">${icon('plus')}Añadir las marcadas a mis tarjetas</button>` : '<p class="muted">Ya tienes todas las palabras de esta lectura en tus tarjetas.</p>'}
+    </section>`;
+  $('#addsel')?.addEventListener('click', e => {
+    let n = 0;
+    box.querySelectorAll('.pw input:checked').forEach(c => { const x = words[c.dataset.i]; if (Vocab.add(x.w, x.es, x.ex)) n++; });
+    const note = `Lectura "${r.title}": ${okS}/${r.sentences.length} frases y ${r.questions.length - badQ.length}/${r.questions.length} preguntas.${cats.size ? ' Repasar: ' + [...cats].map(c => REVIEW[c][0]).join(', ') + '.' : ''}`;
+    store.set(st => { st.notes[today()] = (st.notes[today()] ? st.notes[today()] + '\n' : '') + note; });
+    toast(n ? `${n} palabra${n > 1 ? 's' : ''} añadida${n > 1 ? 's' : ''} a tus tarjetas` : 'No había palabras nuevas que añadir');
+    e.currentTarget.disabled = true;
+  });
+  box.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ---------- Libro: toda la gramática para leer y consultar ----------
