@@ -46,7 +46,7 @@ const Chat = (() => {
 
   function draw() {
     const p = el();
-    const hasKey = !!cfg().key;
+    const hasKey = !!cfg().key || Pro.active();
     p.innerHTML = `
       <div class="chat-head"><span>${icon('sparkle')}Pregúntale a Claude</span><button class="icon small" id="chatclose" aria-label="Cerrar">${icon('x')}</button></div>
       ${!hasKey ? `
@@ -80,8 +80,12 @@ const Chat = (() => {
     busy = true; draw();
     const out = () => $('#chatlog')?.lastElementChild;
     if (out()) out().innerHTML = '<span class="typing"><i></i><i></i><i></i></span>';
-    const client = new window.Anthropic({ apiKey: cfg().key, dangerouslyAllowBrowser: true });
-    const m = model();
+    // Con Talkiro Pro el chat va por nuestro servidor (que pone el modelo y el límite); si no, con la clave del usuario
+    const viaPro = Pro.active() && !cfg().key;
+    const client = viaPro
+      ? new window.Anthropic({ apiKey: Pro.token(), baseURL: Pro.server(), dangerouslyAllowBrowser: true })
+      : new window.Anthropic({ apiKey: cfg().key, dangerouslyAllowBrowser: true });
+    const m = viaPro ? 'claude-opus-5-5' : model();
     const params = {
       model: m,
       max_tokens: 16000,
@@ -112,7 +116,8 @@ const Chat = (() => {
     } catch (err) {
       const A = window.Anthropic;
       let msg = 'No se ha podido contactar con Claude. Inténtalo de nuevo.';
-      if (err instanceof A.AuthenticationError) msg = 'La clave de API no es válida. Cámbiala en Ajustes.';
+      if (viaPro && (err instanceof A.AuthenticationError || err instanceof A.RateLimitError)) msg = err.error?.error?.message || msg;
+      else if (err instanceof A.AuthenticationError) msg = 'La clave de API no es válida. Cámbiala en Ajustes.';
       else if (err instanceof A.PermissionDeniedError) msg = 'Tu clave no tiene permiso para usar este modelo. Elige otro en Ajustes.';
       else if (err instanceof A.RateLimitError) msg = 'Demasiadas preguntas seguidas o sin saldo. Espera un momento o revisa tu cuenta.';
       else if (err instanceof A.APIConnectionError) msg = 'Sin conexión a internet.';
