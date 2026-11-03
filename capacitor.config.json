@@ -1,6 +1,6 @@
 {
   "appId": "dev.robert.c1tracker",
-  "appName": "Speakly",
+  "appName": "Talkiro",
   "webDir": "src",
   "server": { "androidScheme": "http", "cleartext": true },
   "android": { "allowMixedContent": true }

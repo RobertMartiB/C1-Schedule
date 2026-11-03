@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="src/icon.png" width="96" alt="Icono de Speakly">
+  <img src="src/icon.png" width="96" alt="Icono de Talkiro">
 </p>
 
-<h1 align="center">Speakly</h1>
+<h1 align="center">Talkiro</h1>
 
 <p align="center">
   <b>Aprende idiomas a tu ritmo, desde casa.</b><br>
@@ -10,9 +10,9 @@
 </p>
 
 <p align="center">
-  <a href="https://robertmartib.github.io/Speakly"><b>Web y descargas</b></a> ·
-  <a href="https://robertmartib.github.io/Speakly/app/"><b>Usarla en el navegador</b></a> ·
-  <a href="https://github.com/RobertMartiB/Speakly/releases/latest"><b>Última versión</b></a>
+  <a href="https://robertmartib.github.io/Talkiro"><b>Web y descargas</b></a> ·
+  <a href="https://robertmartib.github.io/Talkiro/app/"><b>Usarla en el navegador</b></a> ·
+  <a href="https://github.com/RobertMartiB/Talkiro/releases/latest"><b>Última versión</b></a>
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/capturas/hoy.jpg" width="820" alt="Pantalla Hoy de Speakly">
+  <img src="docs/capturas/hoy.jpg" width="820" alt="Pantalla Hoy de Talkiro">
 </p>
 
 ---
@@ -38,7 +38,7 @@
 
 ## Qué es
 
-Speakly es una app de estudio que te dice **qué hacer cada día** para avanzar en un idioma. En lugar de una lista infinita de lecciones, tienes una **ruta por niveles**. Cada unidad tiene tres partes:
+Talkiro es una app de estudio que te dice **qué hacer cada día** para avanzar en un idioma. En lugar de una lista infinita de lecciones, tienes una **ruta por niveles**. Cada unidad tiene tres partes:
 
 | Parte | Qué haces |
 |---|---|
@@ -50,7 +50,7 @@ Además tienes **tarjetas de vocabulario** con repetición espaciada, un **libro
 
 ## Dos formas de estudiar
 
-Al empezar un curso, Speakly te pregunta cómo quieres estudiar. Se puede cambiar en cualquier momento en **Ajustes → Tu forma de estudiar**, y cada curso tiene su propio ritmo.
+Al empezar un curso, Talkiro te pregunta cómo quieres estudiar. Se puede cambiar en cualquier momento en **Ajustes → Tu forma de estudiar**, y cada curso tiene su propio ritmo.
 
 <p align="center">
   <img src="docs/capturas/elegir.jpg" width="820" alt="Elegir la forma de estudiar">
@@ -113,7 +113,7 @@ La lectura se desbloquea al terminar la práctica. Primero lees el texto entero 
 
 ### Libro de gramática y ruta
 
-Toda la teoría de la ruta, ordenada para consultarla, con buscador, tabla de verbos irregulares y una [versión en PDF](https://robertmartib.github.io/Speakly/libro/Speakly-Libro-B1.pdf) para imprimir.
+Toda la teoría de la ruta, ordenada para consultarla, con buscador, tabla de verbos irregulares y una [versión en PDF](https://robertmartib.github.io/Talkiro/libro/Talkiro-Libro-B1.pdf) para imprimir.
 
 <table>
   <tr>
@@ -167,17 +167,17 @@ La misma app en Android, con la barra de navegación abajo.
 
 ## Instalar
 
-Todo está en la [web de descargas](https://robertmartib.github.io/Speakly) y en la [última versión](https://github.com/RobertMartiB/Speakly/releases/latest).
+Todo está en la [web de descargas](https://robertmartib.github.io/Talkiro) y en la [última versión](https://github.com/RobertMartiB/Talkiro/releases/latest).
 
 | Plataforma | Archivo | Cómo |
 |---|---|---|
-| **Android** 6 o superior | `Speakly-X.Y.Z-android.apk` | Descárgalo en el móvil, ábrelo y permite instalar apps de esa fuente. |
-| **Linux** (Ubuntu, Debian, Mint) | `Speakly-X.Y.Z-linux-amd64.deb` | Doble clic, o `sudo apt install ./Speakly-X.Y.Z-linux-amd64.deb`. |
-| **Linux** (otras distros) | `Speakly-X.Y.Z-linux-x86_64.AppImage` | Dale permiso de ejecución y ábrelo. |
-| **Windows** 10 y 11 | `Speakly-X.Y.Z-win-x64.zip` | Descomprime y abre `Speakly.exe`. |
-| **Navegador / iPhone** | — | Abre la [versión web](https://robertmartib.github.io/Speakly/app/) y añádela a la pantalla de inicio. |
+| **Android** 6 o superior | `Talkiro-X.Y.Z-android.apk` | Descárgalo en el móvil, ábrelo y permite instalar apps de esa fuente. |
+| **Linux** (Ubuntu, Debian, Mint) | `Talkiro-X.Y.Z-linux-amd64.deb` | Doble clic, o `sudo apt install ./Talkiro-X.Y.Z-linux-amd64.deb`. |
+| **Linux** (otras distros) | `Talkiro-X.Y.Z-linux-x86_64.AppImage` | Dale permiso de ejecución y ábrelo. |
+| **Windows** 10 y 11 | `Talkiro-X.Y.Z-win-x64.zip` | Descomprime y abre `Talkiro.exe`. |
+| **Navegador / iPhone** | — | Abre la [versión web](https://robertmartib.github.io/Talkiro/app/) y añádela a la pantalla de inicio. |
 
-**Si ya usabas C1 Tracker** (el nombre anterior): en el ordenador, Speakly usa la misma carpeta de datos y conserva tu progreso. En Android, exporta antes tu progreso desde **Ajustes** por si tienes que desinstalar la versión anterior.
+**Si ya usabas Speakly o C1 Tracker** (los nombres anteriores): en el ordenador, Talkiro usa la misma carpeta de datos y conserva tu progreso. En Android, exporta antes tu progreso desde **Ajustes** por si tienes que desinstalar la versión anterior.
 
 ## Preguntas frecuentes
 

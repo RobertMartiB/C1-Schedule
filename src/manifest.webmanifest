@@ -1,6 +1,6 @@
 {
-  "name": "Speakly",
-  "short_name": "Speakly",
+  "name": "Talkiro",
+  "short_name": "Talkiro",
   "description": "Tu ruta para aprender idiomas: inglés de B1 a C1 y japonés desde cero, con teoría, práctica, lecturas y vocabulario.",
   "start_url": "./#hoy",
   "scope": "./",

@@ -1,4 +1,4 @@
-// Ventana de escritorio de Speakly. Sirve la app desde un servidor local con
+// Ventana de escritorio de Talkiro. Sirve la app desde un servidor local con
 // puerto fijo para que el progreso (localStorage) se conserve entre aperturas y
 // para poder conectar con servidores Jellyfin por http.
 const { app, BrowserWindow, shell } = require('electron');
@@ -32,7 +32,7 @@ function startServer() {
 function createWindow() {
   const win = new BrowserWindow({
     width: 1100, height: 800, minWidth: 380, minHeight: 500,
-    title: 'Speakly', icon: path.join(__dirname, 'src', 'icon.png'),
+    title: 'Talkiro', icon: path.join(__dirname, 'src', 'icon.png'),
     autoHideMenuBar: true, backgroundColor: '#0b0a12',
   });
   // Los enlaces externos (Write & Improve, Cambridge…) se abren en el navegador.

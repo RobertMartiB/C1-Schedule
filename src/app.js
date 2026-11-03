@@ -903,7 +903,7 @@ function renderSettings(main) {
     const { jellyfin, ...data } = store.get();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
-    a.download = `speakly-${ACTIVE_COURSE.id}-progreso-${today()}.json`; a.click();
+    a.download = `talkiro-${ACTIVE_COURSE.id}-progreso-${today()}.json`; a.click();
   });
   $('#import').addEventListener('change', async e => {
     try { store.replace({ ...JSON.parse(await e.target.files[0].text()), jellyfin: store.get().jellyfin }); toast('Progreso importado'); }
