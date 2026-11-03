@@ -197,7 +197,9 @@ function dayBlocks(s) {
   }
   if (m.kind !== 'mock') blocks.push(...companionBlocks(m.kind === 'unit' ? m.unit : null, m.session, d.input));
   blocks.push(vocabBlock(s));
-  if (d.writing) blocks.push({ id: 'writing', min: MIN.writing, icon: 'file', kicker: 'Writing de la semana', text: d.writing.replace(/ \(.*\)\.?$/, ''), detail: `${d.writing} Cuando lo tengas, pégaselo a Claude para que te lo corrija.`, ready: true });
+  const wt = d.writing && typeof WRITING_TASKS !== 'undefined' && WRITING_TASKS[d.writing];
+  if (wt) blocks.push({ id: 'writing', min: MIN.writing, icon: 'file', kicker: `Writing de la semana · ${wt.type}`, text: wt.es, detail: `${wt.words[0]}–${wt.words[1]} palabras en ${wt.minutes} minutos, con el formato de Cambridge. Al terminar, la IA te lo corrige con los criterios del examen.`, link: `#writing/${d.writing}`, ready: true, cta: 'Escribir' });
+  else if (d.writing) blocks.push({ id: 'writing', min: MIN.writing, icon: 'file', kicker: 'Writing de la semana', text: d.writing.replace(/ \(.*\)\.?$/, ''), detail: `${d.writing} Cuando lo tengas, pégaselo a Claude para que te lo corrija.`, ready: true });
   return fitToTime(blocks);
 }
 
@@ -245,7 +247,7 @@ function route() {
   const main = $('#main');
   if (!CourseStore.picked && view !== 'cursos') { renderCourses(main); return; }
   if (view !== 'cursos') document.body.classList.remove('picking');
-  const views = { cursos: renderCourses, hoy: renderToday, ruta: renderRoute, unidad: (m, a) => renderUnit(m, a[0], a[1]), libro: renderBook, vocabulario: m => Vocab.render(m), calendario: renderCalendar, series: (m, a) => renderSeries(m, a[0]), ajustes: renderSettings };
+  const views = { cursos: renderCourses, hoy: renderToday, ruta: renderRoute, unidad: (m, a) => renderUnit(m, a[0], a[1]), libro: renderBook, vocabulario: m => Vocab.render(m), calendario: renderCalendar, series: (m, a) => renderSeries(m, a[0]), writing: (m, a) => renderWriting(m, a[0]), ajustes: renderSettings };
   (views[view] || renderToday)(main, args);
   window.scrollTo(0, 0);
 }

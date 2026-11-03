@@ -509,6 +509,7 @@ function bookIndex() {
 function renderBook(main, args) {
   const id = args[0];
   if (id === 'irregulares') return renderIrregular(main);
+  if (id === 'writing') return renderWritingList(main);
   if (id) return renderBookUnit(main, id);
   const idx = bookIndex();
   main.innerHTML = `
@@ -516,7 +517,7 @@ function renderBook(main, args) {
       <span class="eyebrow">Tu libro de gramática</span>
       <h1>${esc(ACTIVE_COURSE.subtitle)}</h1>
       <p class="muted">Toda la teoría de la ruta, unidad por unidad. Es lo mismo que estudias cada día en la app: aquí lo tienes ordenado para leer y consultar.</p>
-      ${COURSE_DEF.id === 'en' ? `<div class="row"><a class="btn primary" href="${BOOK_PDF}" target="_blank" rel="noopener">${icon('download')}Libro en PDF</a><a class="btn" href="#libro/irregulares">${icon('layers')}Verbos irregulares</a></div>` : ''}
+      ${COURSE_DEF.id === 'en' ? `<div class="row"><a class="btn primary" href="${BOOK_PDF}" target="_blank" rel="noopener">${icon('download')}Libro en PDF</a><a class="btn" href="#libro/irregulares">${icon('layers')}Verbos irregulares</a><a class="btn" href="#libro/writing">${icon('pencil')}Writings Cambridge</a></div>` : ''}
     </section>
     <input class="search" id="bq" placeholder="${COURSE_DEF.id === 'ja' ? 'Busca un tema: hiragana, は, です…' : 'Busca un tema: since, pasiva, although, used to…'}" autocomplete="off" autocapitalize="off">
     <div id="blist"></div>`;
@@ -532,6 +533,16 @@ function renderBook(main, args) {
   };
   draw('');
   $('#bq').oninput = e => draw(e.target.value);
+}
+// Todos los writings con formato Cambridge, para practicarlos cuando quieras (no solo el sábado que tocan)
+function renderWritingList(main) {
+  const saved = store.get().writing || {};
+  const groups = [...new Set(Object.values(WRITING_TASKS).map(w => w.level))];
+  main.innerHTML = `<a class="back" href="#libro">← Libro</a>
+    <section class="bookhead"><span class="eyebrow">Writing</span><h1>Writings con formato Cambridge</h1>
+    <p class="muted">Enunciado como en el examen, cronómetro, corrección con la IA según los cuatro criterios oficiales y una respuesta modelo.</p></section>
+    ${groups.map(g => `<section class="lvl"><header><h2>${esc(g)}</h2></header><ol class="units">${Object.entries(WRITING_TASKS).filter(([, w]) => w.level === g).map(([id, w], i) => `<li><a href="#writing/${id}"><span class="n">${i + 1}</span>
+      <span class="ut"><b>${esc(w.es)}</b><small>${esc(w.type)} · ${w.words[0]}–${w.words[1]} palabras${saved[id]?.feedback ? ' · corregido' : saved[id]?.text ? ' · empezado' : ''}</small></span><span class="us">${icon('right', 'chev')}</span></a></li>`).join('')}</ol></section>`).join('')}`;
 }
 function renderBookUnit(main, id) {
   const meta = unitById(id), u = UNITS[id];

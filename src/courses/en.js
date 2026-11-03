@@ -72,11 +72,12 @@ const COURSE_DEF = {
   ],
 
 // Escritos semanales (los sábados), por nivel
+  // Writings con formato Cambridge: enunciado, respuesta modelo y corrección en src/writing.js
   writings: {
-  b1: ['Un email a un amigo contándole tu fin de semana (120–150 palabras).', 'Una historia que empiece por "I had never felt so nervous." (140 palabras).', 'Un artículo: "My favourite place in my town" (150 palabras).'],
-  b2: ['Essay: ¿Deberían ser gratis los museos? (140–190 palabras).', 'Review de una serie que estés viendo (140–190 palabras).', 'Email formal reclamando un producto defectuoso (140–190 palabras).', 'Report: instalaciones deportivas de tu barrio (140–190 palabras).'],
-  c1: ['Essay: ventajas e inconvenientes del teletrabajo (220–260 palabras).', 'Proposal: mejorar la biblioteca de tu ciudad (220–260 palabras).', 'Review de un libro o película para una revista (220–260 palabras).', 'Report sobre el uso del móvil en clase (220–260 palabras).'],
-  exam: ['Essay de examen cronometrado: 45 minutos.', 'Part 2 de examen (report, review o proposal): 45 minutos.'],
+  b1: ['w-b1-1', 'w-b1-2', 'w-b1-3'],
+  b2: ['w-b2-1', 'w-b2-2', 'w-b2-3', 'w-b2-4'],
+  c1: ['w-c1-1', 'w-c1-2', 'w-c1-3', 'w-c1-4'],
+  exam: ['w-ex-1', 'w-ex-2'],
   },
 
   holidays: {

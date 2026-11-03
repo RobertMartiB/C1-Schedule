@@ -735,3 +735,18 @@ dialog#prodlg::backdrop { background: rgba(0, 0, 0, .6); }
 .wcard .addword input { flex: 1; min-width: 0; }
 #pdual { font-size: .72rem !important; font-weight: 800; opacity: .55; }
 #pdual.on { opacity: 1; background: rgba(155, 130, 255, .35) !important; }
+
+/* Writing con formato Cambridge */
+.wtask { background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--radius); padding: 14px 18px; line-height: 1.6; }
+.wtask blockquote { margin: 10px 0; padding: 10px 14px; background: var(--card2); border-radius: 10px; }
+.wbar { display: flex; justify-content: space-between; align-items: center; margin: 14px 0 8px; gap: 10px; }
+.wbar .ok { color: var(--ok); } .wbar .off { color: var(--bad); }
+#wtext { width: 100%; min-height: 280px; font: inherit; line-height: 1.6; resize: vertical; margin-bottom: 10px; }
+.wmodel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; line-height: 1.7; }
+.wfb { margin-top: 16px; }
+.wscores { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin: 8px 0 14px; }
+.wscores div { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; gap: 2px; }
+.wscores b { font-size: 1.5rem; } .wscores small { font-size: .8rem; color: var(--muted); font-weight: 600; }
+.wscores span { font-size: .8rem; color: var(--muted); }
+.wscores .total { border-color: var(--accent); }
+.wfb .wtext { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; line-height: 1.65; }

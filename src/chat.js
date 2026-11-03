@@ -83,9 +83,9 @@ const Chat = (() => {
     return { client, viaPro, m: viaPro ? 'claude-opus-5-5' : model() };
   }
   // Pregunta corta sin historial (p. ej. qué significa una palabra en una frase). Devuelve el texto.
-  async function quick(system, text) {
+  async function quick(system, text, maxTokens = 2000) {
     const { client, viaPro, m } = makeClient();
-    const params = { model: m, max_tokens: 2000, system, messages: [{ role: 'user', content: text }] };
+    const params = { model: m, max_tokens: maxTokens, system, messages: [{ role: 'user', content: text }] };
     const smart = viaPro || m === 'claude-opus-5-5' || m === 'claude-sonnet-5-5';
     if (smart) params.output_config = { effort: 'low' };
     const stream = smart
