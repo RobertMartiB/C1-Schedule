@@ -19,7 +19,11 @@ const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date
 const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return iso(d); };
 const weekday = s => parse(s).getDay();
 
+// Cada unidad dura 2 días y cada día tiene al menos DAILY_EXERCISES ejercicios
+const DAILY_EXERCISES = 30;
 const SESSION = {
+  dia1: { label: 'Día 1 de 2', icon: '📖', tab: 'teoria', text: u => u.title, detail: 'Teoría y práctica de la unidad, y ejercicios extra hasta llegar a 30. Tómatelo con calma: mañana sigues con esta misma unidad.' },
+  dia2: { label: 'Día 2 de 2', icon: '🔍', tab: 'lectura', text: u => u.title, detail: 'Repasa la teoría, haz la lectura desmontada y practica con ejercicios nuevos hasta llegar a 30.' },
   full: { label: 'Unidad completa', icon: '📖', tab: 'teoria', text: u => u.title, detail: 'Hoy toca esta unidad entera: teoría, práctica y lectura desmontada. Mañana, la siguiente.' },
   teoria: { label: 'Teoría', icon: '📖', tab: 'teoria', text: u => `Teoría: ${u.title}`, detail: 'Lee la teoría con calma y haz los ejemplos en voz alta. Al final, los primeros ejercicios.' },
   practica: { label: 'Práctica', icon: '✍️', tab: 'practica', text: u => `Práctica: ${u.title}`, detail: 'Todos los ejercicios de la unidad. Lee la explicación de cada fallo.' },
@@ -52,8 +56,8 @@ function buildSchedule() {
       return s;
     };
     if (lv.kind !== 'exam') {
-      // Una unidad completa por día: cada día un tema nuevo
-      for (const u of units) put({ kind: 'unit', unit: u.id, session: 'full' });
+      // Cada unidad dura 2 días: el primero teoría y práctica, el segundo lectura; los dos con 30 ejercicios
+      for (const u of units) { put({ kind: 'unit', unit: u.id, session: 'dia1' }); put({ kind: 'unit', unit: u.id, session: 'dia2' }); }
       put({ kind: 'levelreview', text: `Repaso general del nivel ${lv.name}`, detail: 'Repasa la teoría de las unidades donde más fallaste y rehaz esos ejercicios.' });
       put({ kind: 'levelreview', text: `Repaso de vocabulario del nivel ${lv.name}`, detail: 'Todas tus tarjetas pendientes y las lecturas de este nivel en modo reto.' });
       put({ kind: 'leveltest', text: `Test de nivel ${lv.name}`, detail: 'Pídele a Claude el test de fin de nivel. Si sacas un 70% o más, pasas al siguiente nivel.' });

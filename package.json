@@ -1,7 +1,7 @@
 {
   "name": "c1-tracker",
   "productName": "Speakly",
-  "version": "2.6.1",
+  "version": "2.6.2",
   "description": "Tu plan de estudio para el Cambridge C1 Advanced, con calendario, materiales y Jellyfin.",
   "author": "Robert Martí",
   "license": "MIT",

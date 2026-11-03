@@ -100,15 +100,20 @@ function genExtra(id, seed, count = 10) {
 function renderExtra(body, id, seed = Date.now()) {
   const list = genExtra(id, seed);
   const done = progress(id).extraDone || 0;
+  // Los ejercicios cuentan para el día 1 de la unidad hasta completarlo; después, para el día 2
+  const day = typeof sessionDone === 'function' && sessionDone(id, 'dia1') ? 'dia2' : 'dia1';
+  const left = typeof extraLeft === 'function' ? extraLeft(id, day) : 0;
   if (!list.length) { body.innerHTML = '<p class="empty">Esta unidad todavía no tiene material para más práctica.</p>'; return; }
   let ok = 0, answered = 0;
   body.innerHTML = `
-    <div class="instr">Ejercicios nuevos con lo que has estudiado en esta unidad: frases de la lectura, vocabulario y, primero, los que fallaste. Pide otra tanda cuando quieras.${done ? ` <b>Llevas ${done} ejercicios extra en esta unidad.</b>` : ''}</div>
+    <div class="instr">Ejercicios nuevos con lo que has estudiado en esta unidad: frases de la lectura, vocabulario y, primero, los que fallaste. Pide otra tanda cuando quieras.<br><b id="extraleft">${left ? `Para completar el ${day === 'dia1' ? 'día 1' : 'día 2'} de la unidad te faltan ${left} ejercicios.` : `Objetivo del ${day === 'dia1' ? 'día 1' : 'día 2'} cumplido: estos ya son de propina.`}</b></div>
     <ol class="exlist">${list.map((ex, i) => `<li class="exitem" data-x="${i}">${ex.from === 'fallo' ? '<span class="state bad">' + icon('repeat') + 'Lo fallaste antes</span>' : ''}${exerciseHtml(ex, i + 100)}</li>`).join('')}</ol>
     <div id="extrasum"></div>`;
   body.querySelectorAll('[data-x]').forEach(li => bindExercise(li, list[li.dataset.x], good => {
     answered++; if (good) ok++;
-    setProgress(id, pr => { pr.extraDone = (pr.extraDone || 0) + 1; });
+    setProgress(id, pr => { pr.extraDone = (pr.extraDone || 0) + 1; const k = day === 'dia1' ? 'extraD1' : 'extraD2'; pr[k] = (pr[k] || 0) + 1; });
+    const l2 = extraLeft(id, day);
+    $('#extraleft').textContent = l2 ? `Para completar el ${day === 'dia1' ? 'día 1' : 'día 2'} de la unidad te faltan ${l2} ejercicios.` : `¡Objetivo del ${day === 'dia1' ? 'día 1' : 'día 2'} cumplido! Puedes seguir practicando si quieres.`;
     if (answered === list.length) {
       $('#extrasum').innerHTML = `<div class="sumbox ${ok === list.length ? 'ok' : 'bad'}">${icon(ok === list.length ? 'check' : 'info')}<div><b>${ok} de ${list.length} correctas</b><p>${ok === list.length ? '¡Perfecto! Esta unidad la tienes dominada.' : 'Repasa la teoría de lo que has fallado y prueba otra tanda.'}</p></div><button class="primary" id="moreextra">${icon('repeat')}Otra tanda</button></div>`;
       $('#moreextra').onclick = () => { renderExtra(body, id, Date.now()); window.scrollTo(0, 0); };
@@ -163,7 +168,9 @@ function renderPractice(body, id, onlyWrong = false) {
     const pr = progress(id), bad = u.exercises.filter((_, i) => pr.ex?.[i] === false).length, todo = u.exercises.filter((_, i) => pr.ex?.[i] === undefined).length;
     $('#pracsum').innerHTML = bad || todo
       ? `<div class="sumbox bad">${icon('info')}<div><b>${bad ? `${bad} ${bad === 1 ? 'ejercicio fallado' : 'ejercicios fallados'}` : ''}${bad && todo ? ' · ' : ''}${todo ? `${todo} sin hacer` : ''}</b><p>Para pasar a la lectura tienes que acertarlos todos.</p></div>${bad ? '<button class="primary" id="redo">Repetir los fallos</button>' : ''}</div>`
-      : `<div class="sumbox ok">${icon('check')}<div><b>¡Práctica completa!</b><p>Todos los ejercicios acertados.</p></div><a class="btn primary" href="#unidad/${id}/lectura">Ir a la lectura${icon('arrow')}</a></div>`;
+      : extraLeft(id, 'dia1')
+        ? `<div class="sumbox ok">${icon('check')}<div><b>¡Práctica completa!</b><p>Para terminar el día 1 te faltan ${extraLeft(id, 'dia1')} ejercicios extra sobre lo que has estudiado.</p></div><a class="btn primary" href="#unidad/${id}/extra">Ejercicios extra${icon('arrow')}</a></div>`
+        : `<div class="sumbox ok">${icon('check')}<div><b>¡Práctica completa!</b><p>Día 1 de la unidad terminado. Mañana, la lectura.</p></div><a class="btn" href="#unidad/${id}/extra">Practicar más${icon('arrow')}</a></div>`;
     $('#redo')?.addEventListener('click', () => renderPractice(body, id, true));
   };
   drawSum();

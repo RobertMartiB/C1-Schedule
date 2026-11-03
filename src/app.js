@@ -43,6 +43,8 @@ function sessionDone(uid, session) {
   const st = unitStatus(uid);
   if (!st.ready) return false;
   if (session === 'full') return st.theory && st.exOk === st.exTotal && st.reading;
+  if (session === 'dia1') return st.theory && st.exOk === st.exTotal && extraLeft(uid, 'dia1') === 0;
+  if (session === 'dia2') return st.reading && extraLeft(uid, 'dia2') === 0;
   return session === 'teoria' ? st.theory : session === 'practica' ? st.exOk === st.exTotal : session === 'lectura' ? st.reading : false;
 }
 // Primer paso pendiente desde una unidad: su sesión sin hacer o la teoría de la siguiente unidad.
@@ -56,6 +58,15 @@ function nextStep(uid) {
   return null;
 }
 const MIN = { main: 60, read: 45, series: 45, vocab: 30, writing: 45, ...(COURSE_DEF.minutes || {}) };
+// Ejercicios extra que faltan para llegar a los 30 del día
+function extraTarget(uid, day) {
+  const u = UNITS[uid]; if (!u) return 0;
+  return day === 'dia1' ? Math.max(0, DAILY_EXERCISES - u.exercises.length) : Math.max(0, DAILY_EXERCISES - (u.reading?.questions?.length || 0));
+}
+function extraLeft(uid, day) {
+  const pr = store.get().units?.[uid] || {};
+  return Math.max(0, extraTarget(uid, day) - (pr[day === 'dia1' ? 'extraD1' : 'extraD2'] || 0));
+}
 // Parte de la unidad por la que seguir (teoría → práctica → lectura)
 function unitPendingTab(uid) {
   const st = unitStatus(uid);
@@ -63,6 +74,19 @@ function unitPendingTab(uid) {
 }
 function unitBlock(uid, session, id, kickerPrefix = '') {
   const u = unitById(uid), ses = SESSION[session], n = SYLLABUS.indexOf(u) + 1;
+  if (session === 'dia1' || session === 'dia2') {
+    const st = unitStatus(uid), left = extraLeft(uid, session);
+    let tab, cta;
+    if (session === 'dia1') {
+      tab = !st.ready || !st.theory ? 'teoria' : st.exOk < st.exTotal ? 'practica' : 'extra';
+      cta = tab === 'teoria' ? 'Empezar la unidad' : tab === 'practica' ? 'Seguir con la práctica' : left ? `Ejercicios extra (faltan ${left})` : 'Practicar más';
+    } else {
+      tab = !st.reading ? 'lectura' : 'extra';
+      cta = tab === 'lectura' ? 'Hacer la lectura' : left ? `Ejercicios extra (faltan ${left})` : 'Practicar más';
+    }
+    const done = session === 'dia1' ? (st.exOk || 0) + (store.get().units?.[uid]?.extraD1 || 0) : (st.reading ? (UNITS[uid]?.reading?.questions?.length || 0) : 0) + (store.get().units?.[uid]?.extraD2 || 0);
+    return { id, min: MIN.main, icon: session === 'dia1' ? 'open' : 'search', kicker: `${kickerPrefix}Unidad ${n} · ${ses.label} · ${Math.min(done, DAILY_EXERCISES)}/${DAILY_EXERCISES} ejercicios`, text: u.title, detail: ses.detail, link: `#unidad/${u.id}/${tab}`, ready: !!UNITS[u.id], auto: sessionDone(uid, session), cta };
+  }
   if (session === 'full') {
     const st = unitStatus(uid), tab = unitPendingTab(uid);
     const started = st.theory || st.exOk || st.reading;
@@ -100,8 +124,10 @@ function pendingSteps(n) {
   const out = [];
   for (const u of SYLLABUS) {
     if (!UNITS[u.id]) break;
-    if (!sessionDone(u.id, 'full')) out.push({ unit: u.id, session: 'full' });
-    if (out.length >= n) return out;
+    for (const d of ['dia1', 'dia2']) {
+      if (!sessionDone(u.id, d)) out.push({ unit: u.id, session: d });
+      if (out.length >= n) return out;
+    }
   }
   return out;
 }
@@ -109,7 +135,7 @@ function pendingSteps(n) {
 function dailySteps(s) {
   // Cada día es una unidad completa (los días guardados con el sistema antiguo de partes se recalculan)
   const saved = store.get().daily?.[s];
-  if (s === today() && (!saved?.length || saved.some(p => p.session !== 'full'))) store.set(st => { st.daily = st.daily || {}; st.daily[s] = pendingSteps(1); });
+  if (s === today() && (!saved?.length || saved.some(p => p.session !== 'dia1' && p.session !== 'dia2'))) store.set(st => { st.daily = st.daily || {}; st.daily[s] = pendingSteps(1); });
   return store.get().daily?.[s] || [];
 }
 // Episodio de la serie del nivel según lo que llevas hecho del nivel (avanza contigo, no con el calendario)
