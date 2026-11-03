@@ -20,6 +20,7 @@ const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); retu
 const weekday = s => parse(s).getDay();
 
 const SESSION = {
+  full: { label: 'Unidad completa', icon: '📖', tab: 'teoria', text: u => u.title, detail: 'Hoy toca esta unidad entera: teoría, práctica y lectura desmontada. Mañana, la siguiente.' },
   teoria: { label: 'Teoría', icon: '📖', tab: 'teoria', text: u => `Teoría: ${u.title}`, detail: 'Lee la teoría con calma y haz los ejemplos en voz alta. Al final, los primeros ejercicios.' },
   practica: { label: 'Práctica', icon: '✍️', tab: 'practica', text: u => `Práctica: ${u.title}`, detail: 'Todos los ejercicios de la unidad. Lee la explicación de cada fallo.' },
   lectura: { label: 'Lectura', icon: '🔍', tab: 'lectura', text: u => `Lectura desmontada: ${u.title}`, detail: 'Primero lee el texto entero. Luego desmonta cada frase: busca el verbo principal y el sujeto antes de ver la solución.' },
@@ -51,7 +52,8 @@ function buildSchedule() {
       return s;
     };
     if (lv.kind !== 'exam') {
-      for (const u of units) SESSION_ORDER.forEach(session => put({ kind: 'unit', unit: u.id, session }));
+      // Una unidad completa por día: cada día un tema nuevo
+      for (const u of units) put({ kind: 'unit', unit: u.id, session: 'full' });
       put({ kind: 'levelreview', text: `Repaso general del nivel ${lv.name}`, detail: 'Repasa la teoría de las unidades donde más fallaste y rehaz esos ejercicios.' });
       put({ kind: 'levelreview', text: `Repaso de vocabulario del nivel ${lv.name}`, detail: 'Todas tus tarjetas pendientes y las lecturas de este nivel en modo reto.' });
       put({ kind: 'leveltest', text: `Test de nivel ${lv.name}`, detail: 'Pídele a Claude el test de fin de nivel. Si sacas un 70% o más, pasas al siguiente nivel.' });

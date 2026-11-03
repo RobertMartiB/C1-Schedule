@@ -42,6 +42,7 @@ const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / 864e5);
 function sessionDone(uid, session) {
   const st = unitStatus(uid);
   if (!st.ready) return false;
+  if (session === 'full') return st.theory && st.exOk === st.exTotal && st.reading;
   return session === 'teoria' ? st.theory : session === 'practica' ? st.exOk === st.exTotal : session === 'lectura' ? st.reading : false;
 }
 // Primer paso pendiente desde una unidad: su sesión sin hacer o la teoría de la siguiente unidad.
@@ -55,8 +56,19 @@ function nextStep(uid) {
   return null;
 }
 const MIN = { main: 60, read: 45, series: 45, vocab: 30, writing: 45, ...(COURSE_DEF.minutes || {}) };
+// Parte de la unidad por la que seguir (teoría → práctica → lectura)
+function unitPendingTab(uid) {
+  const st = unitStatus(uid);
+  return !st.ready || !st.theory ? 'teoria' : st.exOk < st.exTotal ? 'practica' : !st.reading ? 'lectura' : 'extra';
+}
 function unitBlock(uid, session, id, kickerPrefix = '') {
   const u = unitById(uid), ses = SESSION[session], n = SYLLABUS.indexOf(u) + 1;
+  if (session === 'full') {
+    const st = unitStatus(uid), tab = unitPendingTab(uid);
+    const started = st.theory || st.exOk || st.reading;
+    const parts = st.ready ? `${[st.theory, st.exOk === st.exTotal, st.reading].filter(Boolean).length} de 3 partes hechas` : '';
+    return { id, min: MIN.main, icon: 'open', kicker: `${kickerPrefix}Unidad ${n}${parts ? ' · ' + parts : ''}`, text: u.title, detail: ses.detail, link: `#unidad/${u.id}/${tab}`, ready: !!UNITS[u.id], auto: sessionDone(uid, 'full'), cta: tab === 'extra' ? 'Practicar más' : started ? (tab === 'practica' ? 'Seguir con la práctica' : 'Seguir con la lectura') : 'Empezar la unidad' };
+  }
   const ic = { teoria: 'open', practica: 'pencil', lectura: 'search', repaso: 'repeat' }[session];
   return { id, min: MIN.main, icon: ic, kicker: `${kickerPrefix}Unidad ${n} · ${ses.label}`, text: u.title, detail: ses.detail, link: `#unidad/${u.id}/${ses.tab}`, ready: !!UNITS[u.id], auto: sessionDone(uid, session), cta: session === 'teoria' ? 'Empezar la teoría' : session === 'practica' ? 'Hacer los ejercicios' : session === 'lectura' ? 'Abrir la lectura' : 'Repasar' };
 }
@@ -88,16 +100,16 @@ function pendingSteps(n) {
   const out = [];
   for (const u of SYLLABUS) {
     if (!UNITS[u.id]) break;
-    for (const ses of ['teoria', 'practica', 'lectura']) {
-      if (!sessionDone(u.id, ses)) out.push({ unit: u.id, session: ses });
-      if (out.length >= n) return out;
-    }
+    if (!sessionDone(u.id, 'full')) out.push({ unit: u.id, session: 'full' });
+    if (out.length >= n) return out;
   }
   return out;
 }
 // Los módulos de cada día se fijan la primera vez que abres Hoy ese día
 function dailySteps(s) {
-  if (!store.get().daily?.[s]?.length && s === today()) store.set(st => { st.daily = st.daily || {}; st.daily[s] = pendingSteps(1); });
+  // Cada día es una unidad completa (los días guardados con el sistema antiguo de partes se recalculan)
+  const saved = store.get().daily?.[s];
+  if (s === today() && (!saved?.length || saved.some(p => p.session !== 'full'))) store.set(st => { st.daily = st.daily || {}; st.daily[s] = pendingSteps(1); });
   return store.get().daily?.[s] || [];
 }
 // Episodio de la serie del nivel según lo que llevas hecho del nivel (avanza contigo, no con el calendario)
@@ -152,13 +164,7 @@ function dayBlocks(s) {
   const blocks = [];
   const m = d.main;
   if (m.kind === 'unit') {
-    const main = unitBlock(m.unit, m.session, 'main');
-    blocks.push(main);
-    // Si hoy ya está hecho lo que tocaba, se propone el siguiente paso para adelantar
-    if (s === today() && blockDone(s, main)) {
-      const nx = nextStep(m.unit);
-      if (nx && !(nx.unit === m.unit && nx.session === m.session)) blocks.push({ ...unitBlock(nx.unit, nx.session, 'ahead', 'Para adelantar · '), extra: true });
-    }
+    blocks.push(unitBlock(m.unit, m.session, 'main'));
   } else {
     const ic = m.kind === 'mock' ? 'timer' : m.kind === 'leveltest' ? 'trophy' : m.kind === 'exam' ? 'flag' : 'repeat';
     blocks.push({ id: 'main', min: m.kind === 'mock' ? 235 : MIN.main, icon: ic, kicker: m.kind === 'mock' ? 'Simulacro' : m.kind === 'exam' ? 'Formato del examen' : 'Repaso', text: m.text.replace(/^Formato del examen: /, ''), detail: m.detail, ready: true });
@@ -196,6 +202,13 @@ const currentLevel = s => levelById(SCHEDULE[s]?.level || (s < PLAN_START ? 'b1'
 const fmtMin = m => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}` : `${m} min`);
 const relDay = (t, s) => { const n = daysBetween(t, s); return n === 1 ? 'Mañana' : n === -1 ? 'Ayer' : n > 0 ? `Dentro de ${n} días` : `Hace ${-n} días`; };
 const userName = () => { const n = store.get().jellyfin?.userName || store.get().lastUser || ''; return n ? n[0].toUpperCase() + n.slice(1) : ''; };
+
+// Unidad que se ha estudiado (o toca) un día
+function todayUnit(s) {
+  if (BY_LEVELS) return (store.get().daily?.[s] || [])[0]?.unit || null;
+  const m = SCHEDULE[s]?.main;
+  return m?.kind === 'unit' && UNITS[m.unit] ? m.unit : null;
+}
 
 // ---- Navegación ----
 let selectedDate = null;
@@ -282,7 +295,7 @@ function renderToday(main, args) {
         ${next.link && next.ready ? '' : `<button class="ghostbtn" data-done="${next.id}">${icon('check')}Marcar como hecho</button>`}
       </div>
     </section>` : `
-    <section class="next done-all">${icon('trophy')}<div><h2>${BY_LEVELS ? 'Objetivo cumplido' : 'Día completado'}</h2><p class="muted">Buen trabajo. Mañana más.</p>${BY_LEVELS && pendingSteps(1).length ? `<button class="primary" data-act="more">${icon('plus')}Un módulo más</button>` : ''}</div></section>`}
+    <section class="next done-all">${icon('trophy')}<div><h2>${BY_LEVELS ? 'Objetivo cumplido' : 'Día completado'}</h2><p class="muted">Buen trabajo. Si te quedan ganas, practica más lo de hoy.</p><div class="row">${todayUnit(s) ? `<a class="btn primary" href="#unidad/${todayUnit(s)}/extra">${icon('pencil')}Más práctica de hoy</a>` : ''}${BY_LEVELS && pendingSteps(1).length ? `<button data-act="more">${icon('plus')}Otra unidad</button>` : ''}</div></div></section>`}
 
     <section class="plan">
       <div class="plan-head"><h3>${BY_LEVELS ? 'Tu objetivo de hoy' : 'Plan del día'}</h3><span class="muted small">${core.filter(b => blockDone(s, b)).length} de ${core.length}${left ? ` · quedan ${fmtMin(left)}` : ''}</span></div>

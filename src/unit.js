@@ -39,16 +39,82 @@ function renderUnit(main, id, tab = 'teoria') {
   }
   const st = unitStatus(id);
   const locked = st.exOk < st.exTotal && !st.reading;
-  const tabs = [['teoria', `${icon('open')}Teoría`, st.theory], ['practica', `${icon('pencil')}Práctica <span class="cnt">${st.exOk}/${st.exTotal}</span>`, st.exOk === st.exTotal], ['lectura', `${icon(locked ? 'lock' : 'search')}Lectura`, st.reading]];
+  const tabs = [['teoria', `${icon('open')}Teoría`, st.theory], ['practica', `${icon('pencil')}Práctica <span class="cnt">${st.exOk}/${st.exTotal}</span>`, st.exOk === st.exTotal], ['lectura', `${icon(locked ? 'lock' : 'search')}Lectura`, st.reading], ['extra', `${icon('plus')}Más práctica`, false]];
   main.innerHTML = head + `
     <nav class="tabs">${tabs.map(([t, label, ok]) => `<a href="#unidad/${id}/${t}" class="${t === tab ? 'on' : ''} ${t === 'lectura' && locked ? 'locked' : ''}">${label}${ok ? icon('check', 'ok') : ''}</a>`).join('')}</nav>
     <div id="tabbody"></div>
     ${tab !== 'teoria' ? `<button class="theory-fab" id="theoryFab">${icon('open')}<span>Teoría</span></button>` : ''}`;
   const body = $('#tabbody');
   if (tab === 'practica') renderPractice(body, id);
+  else if (tab === 'extra') renderExtra(body, id);
   else if (tab === 'lectura') { if (locked) renderGate(body, id); else renderReading(body, id); }
   else renderTheory(body, id);
   $('#theoryFab')?.addEventListener('click', () => openTheoryDrawer(id));
+}
+
+// ---------- Más práctica: ejercicios nuevos generados con el contenido de la unidad ----------
+// No hay límite: cada tanda se monta al azar con las frases de la lectura, el vocabulario y los ejercicios que fallaste.
+function rng(seed) { let x = seed % 2147483647 || 1; return () => (x = x * 48271 % 2147483647) / 2147483647; }
+function shuffle(arr, r) { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const cleanW = w => w.replace(/[.,;:!?"“”()]/g, '');
+
+function genExtra(id, seed, count = 10) {
+  const u = UNITS[id], r = rng(seed), p = progress(id), out = [];
+  const sents = u.reading?.sentences || [];
+  const vocab = [];
+  for (const s of sents) for (const [w, es] of s.vocab || []) if (!vocab.some(v => v.w === w)) vocab.push({ w, es, s });
+  // 1) Ejercicios de la unidad que fallaste alguna vez (con las opciones en otro orden)
+  u.exercises.forEach((ex, i) => {
+    if (p.ex?.[i] !== false && !(p.exMiss || {})[i]) return;
+    if (ex.type === 'mcq') { const order = shuffle(ex.opts.map((_, j) => j), r); out.push({ ...ex, opts: order.map(j => ex.opts[j]), a: order.indexOf(ex.a), from: 'fallo' }); }
+    else out.push({ ...ex, from: 'fallo' });
+  });
+  const pool = [];
+  // 2) Encontrar el verbo principal en frases de la lectura
+  for (const s of sents) if (s.parts.some(x => x[0] === 'V') && s.parts.length > 2) pool.push({ type: 'find', role: 'V', prompt: 'Toca el verbo principal.', parts: s.parts, why: s.note });
+  // 3) Ordenar frases de la lectura (las de longitud manejable)
+  for (const s of sents) {
+    const words = sentenceText(s).split(/\s+/).filter(Boolean);
+    if (words.length >= 4 && words.length <= 12) pool.push({ type: 'order', prompt: `Ordena la frase: «${s.es}»`, words, a: words.join(' '), why: s.note });
+  }
+  // 4) Vocabulario en las dos direcciones
+  for (const v of vocab) {
+    const others = shuffle(vocab.filter(x => x.w !== v.w), r).slice(0, 3);
+    if (others.length < 3) continue;
+    const o1 = shuffle([v, ...others], r);
+    pool.push({ type: 'mcq', q: `¿Qué significa <b>«${esc(v.w)}»</b>?`, opts: o1.map(x => x.es), a: o1.indexOf(v), why: `«${v.w}» = ${v.es}. Aparece en: «${sentenceText(v.s)}»` });
+    const o2 = shuffle([v, ...others], r);
+    pool.push({ type: 'mcq', q: `¿Cómo se dice <b>«${esc(v.es)}»</b>?`, opts: o2.map(x => x.w), a: o2.indexOf(v), why: `${v.es} = «${v.w}».` });
+  }
+  // 5) Completar una frase de la lectura con su palabra (solo palabras sueltas escritas en alfabeto latino)
+  for (const v of vocab) {
+    const w = v.w.split(' (')[0];
+    if (!/^[A-Za-z'-]+$/.test(w)) continue;
+    const txt = sentenceText(v.s), re = new RegExp(`\\b${w}\\b`, 'i');
+    if (!re.test(txt)) continue;
+    pool.push({ type: 'gap', q: esc(txt.replace(re, '___')) + ` <span class="muted small">(${esc(v.es)})</span>`, a: [w.toLowerCase()], why: `La palabra es «${w}»: ${v.es}.` });
+  }
+  return [...out.slice(0, Math.ceil(count / 2)), ...shuffle(pool, r)].slice(0, count);
+}
+
+function renderExtra(body, id, seed = Date.now()) {
+  const list = genExtra(id, seed);
+  const done = progress(id).extraDone || 0;
+  if (!list.length) { body.innerHTML = '<p class="empty">Esta unidad todavía no tiene material para más práctica.</p>'; return; }
+  let ok = 0, answered = 0;
+  body.innerHTML = `
+    <div class="instr">Ejercicios nuevos con lo que has estudiado en esta unidad: frases de la lectura, vocabulario y, primero, los que fallaste. Pide otra tanda cuando quieras.${done ? ` <b>Llevas ${done} ejercicios extra en esta unidad.</b>` : ''}</div>
+    <ol class="exlist">${list.map((ex, i) => `<li class="exitem" data-x="${i}">${ex.from === 'fallo' ? '<span class="state bad">' + icon('repeat') + 'Lo fallaste antes</span>' : ''}${exerciseHtml(ex, i + 100)}</li>`).join('')}</ol>
+    <div id="extrasum"></div>`;
+  body.querySelectorAll('[data-x]').forEach(li => bindExercise(li, list[li.dataset.x], good => {
+    answered++; if (good) ok++;
+    setProgress(id, pr => { pr.extraDone = (pr.extraDone || 0) + 1; });
+    if (answered === list.length) {
+      $('#extrasum').innerHTML = `<div class="sumbox ${ok === list.length ? 'ok' : 'bad'}">${icon(ok === list.length ? 'check' : 'info')}<div><b>${ok} de ${list.length} correctas</b><p>${ok === list.length ? '¡Perfecto! Esta unidad la tienes dominada.' : 'Repasa la teoría de lo que has fallado y prueba otra tanda.'}</p></div><button class="primary" id="moreextra">${icon('repeat')}Otra tanda</button></div>`;
+      $('#moreextra').onclick = () => { renderExtra(body, id, Date.now()); window.scrollTo(0, 0); };
+      $('#extrasum').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }));
 }
 
 // ---------- Teoría en un panel lateral (para consultarla sin salir) ----------
