@@ -33,10 +33,12 @@
 
   <dialog id="player">
     <div class="phead"><span id="ptitle"></span>
-      <div class="row"><button class="icon pbtn" id="pquiz" aria-label="Reto ahora" title="Reto ahora"><span data-icon="target"></span></button><button class="icon pbtn" id="pfull" aria-label="Pantalla completa" title="Pantalla completa"><span data-icon="maximize"></span></button><button class="icon pbtn" id="pclose" aria-label="Cerrar"><span data-icon="x"></span></button></div>
+      <div class="row"><button class="icon pbtn" id="pdual" aria-label="Subtítulos en español" title="Subtítulos en español">ES</button><button class="icon pbtn" id="pquiz" aria-label="Reto ahora" title="Reto ahora"><span data-icon="target"></span></button><button class="icon pbtn" id="pfull" aria-label="Pantalla completa" title="Pantalla completa"><span data-icon="maximize"></span></button><button class="icon pbtn" id="pclose" aria-label="Cerrar"><span data-icon="x"></span></button></div>
     </div>
     <div class="pstage">
       <video id="video" controls playsinline crossorigin="anonymous" controlslist="nofullscreen nodownload"></video>
+      <div id="subs"></div>
+      <div id="wordpop" hidden></div>
       <div id="quiz" hidden></div>
     </div>
   </dialog>

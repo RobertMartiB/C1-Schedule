@@ -747,8 +747,10 @@ async function openPlayer(ep) {
       if (resumeAt > 30) video.currentTime = resumeAt;
       playing.lastQuiz = video.currentTime;
       video.play().catch(() => {});
-      // inglés visible; español cargado pero oculto, para poder comprobar las traducciones
-      [...video.textTracks].forEach((t, i) => { t.mode = i === enIdx ? 'showing' : i === esIdx ? 'hidden' : 'disabled'; });
+      // Los subtítulos los pintamos nosotros (#subs) para poder tocar las palabras: las pistas van ocultas pero cargadas
+      [...video.textTracks].forEach((t, i) => { t.mode = i === enIdx || i === esIdx ? 'hidden' : 'disabled'; });
+      const en = video.textTracks[enIdx];
+      if (en) en.oncuechange = drawSubs;
     };
     if (video.canPlayType('application/vnd.apple.mpegurl')) { video.src = url; video.addEventListener('loadedmetadata', start, { once: true }); }
     else if (window.Hls?.isSupported()) {
@@ -838,15 +840,64 @@ function showQuiz() {
   setTimeout(() => $('#qmine')?.focus(), 50);
 }
 
+// ---------- Subtítulos para aprender: palabras que se pueden tocar y el español debajo ----------
+const dualSubs = () => store.get().dualSubs !== false;
+function drawSubs() {
+  const box = $('#subs'), video = $('#video');
+  if (!playing || !box) return;
+  const cue = [...(video.textTracks[playing.enIdx]?.activeCues || [])].pop();
+  if (!cue) { box.innerHTML = ''; return; }
+  const words = cueText(cue).split(/\s+/).filter(Boolean);
+  const es = dualSubs() && playing.esIdx >= 0 ? cueAt(playing.esIdx, cue.startTime, cue.endTime) : '';
+  box.innerHTML = `<p class="en">${words.map(w => `<button class="sw" data-w="${esc(w)}">${esc(w)}</button>`).join(' ')}</p>${es ? `<p class="es">${esc(es)}</p>` : ''}`;
+  box.querySelectorAll('.sw').forEach(b => b.onclick = () => wordPopup(b.dataset.w, cueText(cue)));
+}
+async function wordPopup(raw, sentence) {
+  const video = $('#video'), pop = $('#wordpop');
+  const word = raw.replace(/^[^\p{L}\p{N}']+|[^\p{L}\p{N}']+$/gu, '');
+  if (!word) return;
+  const wasPlaying = !video.paused;
+  video.pause();
+  const ai = Chat.canAsk();
+  pop.hidden = false;
+  pop.innerHTML = `<div class="wcard"><div class="row between"><b class="ww">${esc(word)}</b><button class="icon" id="wpclose" aria-label="Cerrar">${icon('x')}</button></div>
+    <p class="ctx">${esc(sentence)}</p>
+    <div id="wpmean">${ai ? '<span class="muted">Traduciendo…</span>' : `<p class="muted small">${icon('star')} Con Talkiro Pro te la traduce la IA en su contexto.</p>`}</div>
+    <div class="addword"><input id="wpes" placeholder="Significado"><button id="wpadd">+ tarjeta</button></div>
+    <button class="primary" id="wpgo">${icon('play')}Seguir viendo</button></div>`;
+  const done = () => { pop.hidden = true; if (wasPlaying) video.play().catch(() => {}); };
+  $('#wpclose').onclick = done; $('#wpgo').onclick = done;
+  $('#wpadd').onclick = () => { if (Vocab.add(word, $('#wpes').value, sentence)) toast('Tarjeta añadida'); else toast('Escribe el significado (o ya la tenías).'); };
+  if (!ai) { $('#wpmean').querySelector('p').onclick = () => Pro.dialog('series'); return; }
+  try {
+    const out = await Chat.quick(
+      `Eres un diccionario ${ACTIVE_COURSE.inLang.replace(/^en /, '')}-español para estudiantes hispanohablantes. Te doy una palabra y la frase de una serie donde aparece. Responde en dos líneas: en la primera, solo la traducción al español en ese contexto (de 1 a 4 palabras); en la segunda, una explicación breve (máximo 15 palabras) si es una expresión, un phrasal verb o tiene un uso especial. Sin comillas ni formato.`,
+      `Palabra: ${word}\nFrase: ${sentence}`);
+    const [mean, note] = out.split('\n').map(s => s.trim()).filter(Boolean);
+    if (pop.hidden) return;
+    $('#wpmean').innerHTML = `<p class="wmean">${esc(mean || '')}</p>${note ? `<p class="muted small">${esc(note)}</p>` : ''}`;
+    if (!$('#wpes').value) $('#wpes').value = mean || '';
+  } catch (err) {
+    if (!pop.hidden) $('#wpmean').innerHTML = `<p class="muted small">${esc(err.error?.error?.message || 'No se ha podido traducir ahora.')}</p>`;
+  }
+}
+
 function closePlayer() {
   const video = $('#video');
   video.pause(); hls?.destroy(); hls = null; playing = null;
-  $('#quiz').hidden = true;
+  $('#quiz').hidden = true; $('#wordpop').hidden = true; $('#subs').innerHTML = '';
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   video.removeAttribute('src'); video.load();
   $('#player').close();
 }
 $('#pquiz').addEventListener('click', () => showQuiz());
+$('#pdual').classList.toggle('on', dualSubs());
+$('#pdual').addEventListener('click', () => {
+  store.set(s => { s.dualSubs = !dualSubs(); });
+  $('#pdual').classList.toggle('on', dualSubs());
+  toast(dualSubs() ? 'Subtítulos en español: sí' : 'Subtítulos en español: no');
+  drawSubs();
+});
 $('#pfull').addEventListener('click', () => {
   const d = $('#player');
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else d.requestFullscreen?.().catch(() => toast('Tu dispositivo no permite pantalla completa aquí.'));

@@ -43,7 +43,7 @@ const Pro = (() => {
       <p class="muted">${esc(f.text)}</p>
       <ul class="pro-list">
         <li>${icon('sparkle')}<div><b>Tutor de IA</b><span>Dudas, traducciones y explicaciones, sin necesitar tu propia clave.</span></div></li>
-        <li>${icon('film')}<div><b>Tus series y películas</b><span>Subtítulos en inglés, retos que paran la película para traducir lo que oyes y palabras nuevas a tus tarjetas.</span></div></li>
+        <li>${icon('film')}<div><b>Tus series y películas</b><span>Subtítulos en inglés y español, toca una palabra para que la IA te la traduzca y guárdala en tus tarjetas. Y retos que paran la película.</span></div></li>
         <li>${icon('pencil')}<div><b>Corrección del Writing</b><span>Tus redacciones corregidas con el baremo del examen (próximamente).</span></div></li>
       </ul>
       <p class="pro-free">${icon('check')}Gratis siempre: todas las unidades, los ejercicios Cambridge, el libro y las tarjetas.</p>

@@ -715,3 +715,23 @@ dialog#prodlg::backdrop { background: rgba(0, 0, 0, .6); }
 .pro .wide { width: 100%; justify-content: center; }
 .pro .ghost { background: transparent; border-color: transparent; color: var(--muted); }
 .pro .center { text-align: center; }
+
+/* Subtítulos para aprender: palabras que se pueden tocar y el español debajo */
+#subs { position: absolute; left: 0; right: 0; bottom: 64px; display: grid; justify-items: center; gap: 4px; padding: 0 12px; pointer-events: none; z-index: 3; text-align: center; }
+#subs p { margin: 0; max-width: 92%; padding: 4px 10px; border-radius: 8px; background: rgba(0, 0, 0, .62); line-height: 1.45; }
+#subs .en { font-size: clamp(1rem, 2.4vw, 1.45rem); font-weight: 600; pointer-events: auto; }
+#subs .es { font-size: clamp(.82rem, 1.8vw, 1.05rem); color: #ffd98a; }
+#subs .sw { all: unset; cursor: pointer; border-radius: 4px; padding: 0 1px; }
+#subs .sw:hover, #subs .sw:focus-visible { background: rgba(155, 130, 255, .45); }
+#wordpop { position: absolute; inset: 0; display: grid; place-items: center; padding: 14px; background: rgba(6, 8, 16, .55); z-index: 6; }
+.wcard { width: min(420px, 100%); background: #161a27; color: #eef0f8; border: 1px solid #31374d; border-radius: 20px; padding: 16px 18px; display: grid; gap: 10px; animation: pop .2s ease; }
+.wcard p { margin: 0; }
+.wcard .ww { font-size: 1.35rem; }
+.wcard .ctx { color: #8f97b0; font-size: .9rem; font-style: italic; }
+.wcard .wmean { font-size: 1.15rem; font-weight: 700; color: #a7b0ff; }
+.wcard .icon { background: transparent; color: #fff; border: 0; }
+.wcard input { background: #0f121c; color: #eef0f8; border-color: #31374d; }
+.wcard .addword { display: flex; gap: 8px; }
+.wcard .addword input { flex: 1; min-width: 0; }
+#pdual { font-size: .72rem !important; font-weight: 800; opacity: .55; }
+#pdual.on { opacity: 1; background: rgba(155, 130, 255, .35) !important; }

@@ -73,6 +73,29 @@ const Chat = (() => {
   const format = t => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\*(.+?)\*/g, '<i>$1</i>').replace(/\n/g, '<br>');
   const scrollDown = () => { const l = $('#chatlog'); if (l) l.scrollTop = l.scrollHeight; };
 
+  // Con Talkiro Pro se va por nuestro servidor (que pone el modelo y el límite); si no, con la clave del usuario
+  const canAsk = () => !!cfg().key || Pro.active();
+  function makeClient() {
+    const viaPro = Pro.active() && !cfg().key;
+    const client = viaPro
+      ? new window.Anthropic({ apiKey: Pro.token(), baseURL: Pro.server(), dangerouslyAllowBrowser: true })
+      : new window.Anthropic({ apiKey: cfg().key, dangerouslyAllowBrowser: true });
+    return { client, viaPro, m: viaPro ? 'claude-opus-5-5' : model() };
+  }
+  // Pregunta corta sin historial (p. ej. qué significa una palabra en una frase). Devuelve el texto.
+  async function quick(system, text) {
+    const { client, viaPro, m } = makeClient();
+    const params = { model: m, max_tokens: 2000, system, messages: [{ role: 'user', content: text }] };
+    const smart = viaPro || m === 'claude-opus-5-5' || m === 'claude-sonnet-5-5';
+    if (smart) params.output_config = { effort: 'low' };
+    const stream = smart
+      ? client.beta.messages.stream({ ...params, betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' })
+      : client.messages.stream(params);
+    const final = await stream.finalMessage();
+    if (final.stop_reason === 'refusal') throw new Error('No se ha podido traducir.');
+    return final.content.filter(b => b.type === 'text').map(b => b.text).join('').trim();
+  }
+
   async function send(text) {
     if (!window.Anthropic) { toast('No se ha podido cargar el chat.'); return; }
     history.push({ role: 'user', text });
@@ -80,12 +103,7 @@ const Chat = (() => {
     busy = true; draw();
     const out = () => $('#chatlog')?.lastElementChild;
     if (out()) out().innerHTML = '<span class="typing"><i></i><i></i><i></i></span>';
-    // Con Talkiro Pro el chat va por nuestro servidor (que pone el modelo y el límite); si no, con la clave del usuario
-    const viaPro = Pro.active() && !cfg().key;
-    const client = viaPro
-      ? new window.Anthropic({ apiKey: Pro.token(), baseURL: Pro.server(), dangerouslyAllowBrowser: true })
-      : new window.Anthropic({ apiKey: cfg().key, dangerouslyAllowBrowser: true });
-    const m = viaPro ? 'claude-opus-5-5' : model();
+    const { client, viaPro, m } = makeClient();
     const params = {
       model: m,
       max_tokens: 16000,
@@ -93,7 +111,7 @@ const Chat = (() => {
       messages: history.slice(0, -1).map(x => ({ role: x.role, content: x.text })),
     };
     // Los modelos 5.5 llevan esfuerzo bajo (es un chat) y fallback automático si algo se rechaza
-    const smart = m === 'claude-opus-5-5' || m === 'claude-sonnet-5-5';
+    const smart = viaPro || m === 'claude-opus-5-5' || m === 'claude-sonnet-5-5';
     if (smart) params.output_config = { effort: 'low' };
     try {
       const stream = smart
@@ -141,5 +159,5 @@ const Chat = (() => {
     $('#cmodel').onchange = e => { store.set(s => { s.chat = { ...(s.chat || {}), model: e.target.value }; }); toast('Modelo guardado'); };
   }
 
-  return { open, close, toggle, settingsHtml, bindSettings };
+  return { open, close, toggle, settingsHtml, bindSettings, canAsk, quick };
 })();
