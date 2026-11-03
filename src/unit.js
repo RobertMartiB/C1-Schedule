@@ -23,6 +23,7 @@ function unitStatus(id) {
 
 function renderUnit(main, id, tab = 'teoria') {
   const meta = unitById(id), u = UNITS[id];
+  if (u) prepExam(u);
   if (!meta) { main.innerHTML = '<p class="empty">Esa unidad no existe.</p>'; return; }
   const lv = levelById(meta.level);
   const n = SYLLABUS.indexOf(meta) + 1;
@@ -50,6 +51,47 @@ function renderUnit(main, id, tab = 'teoria') {
   else if (tab === 'lectura') { if (locked) renderGate(body, id); else renderReading(body, id); }
   else renderTheory(body, id);
   $('#theoryFab')?.addEventListener('click', () => openTheoryDrawer(id));
+}
+
+// ---------- Formato del examen Cambridge (Reading and Use of English, partes 1 a 4) ----------
+// Textos y preguntas propios; solo se imita la estructura del examen. Cada hueco del texto es un ejercicio
+// y se numera como en el examen: Part 1 = 1–8, Part 2 = 9–16, Part 3 = 17–24, Part 4 = 25–30.
+const EXAM_PARTS = {
+  1: { name: 'Multiple-choice cloze', en: 'Read the text and choose the answer (A, B, C or D) that fits each gap best.', es: 'Vocabulario: colocaciones, matices y expresiones fijas.' },
+  2: { name: 'Open cloze', en: 'Read the text and write one word in each gap.', es: 'Gramática: preposiciones, auxiliares, relativos, conectores… Solo una palabra.' },
+  3: { name: 'Word formation', en: 'Use the word in capitals to form a word that fits each gap.', es: 'Formación de palabras: prefijos, sufijos, plurales y negativos.' },
+  4: { name: 'Key word transformation', en: 'Complete the second sentence so that it means the same as the first. Use the word given without changing it, and write between three and six words.', es: 'Reescribir con la palabra clave. La palabra clave cuenta dentro de las 3–6.' },
+};
+const examAnswer = ex => ex.type === 'mcq' ? ex.opts[ex.a] : ex.a[0];
+// Los ejercicios del examen van detrás de los de siempre: «num» es su número en el examen y [n] en el texto apunta a él
+function prepExam(u) {
+  if (!u.exam || u._examReady) return;
+  u._examReady = true;
+  const byNum = {};
+  u.exercises.filter(ex => ex.part).forEach((ex, k) => { ex.num = k + 1; byNum[ex.num] = ex; });
+  u._examByNum = byNum;
+  u.exercises.forEach(ex => {
+    if (!ex.part) return;
+    if (ex.part === 4) { ex.q = `${ex.s1}<div class="kw">${esc(ex.key)}</div>${ex.s2}`; return; }
+    const text = u.exam[ex.part]?.text || '';
+    const sent = (text.match(/[^.!?]+[.!?]+["”’]?\s*/g) || [text]).find(x => x.includes(`[${ex.num}]`)) || '';
+    const blank = ex.type === 'mcq' ? '<span class="gapno">……</span>' : '___';
+    ex.q = sent.trim()
+      .replace(`[${ex.num}]`, blank + (ex.stem ? ` <b class="stem">(${esc(ex.stem)})</b>` : ''))
+      .replace(/\[(\d+)\]/g, (_, m) => byNum[m] ? `<b>${esc(examAnswer(byNum[m]))}</b>` : '___');
+  });
+}
+// Cabecera de cada parte: instrucciones como en el examen y el texto completo, con los huecos ya acertados rellenos
+function examPartHead(u, id, part) {
+  const P = EXAM_PARTS[part], ex = u.exercises.filter(e => e.part === part), p = progress(id);
+  const range = `${ex[0].num}–${ex[ex.length - 1].num}`;
+  const t = u.exam[part];
+  const text = t ? t.text.replace(/\[(\d+)\]/g, (_, m) => {
+    const e = u._examByNum[m], i = u.exercises.indexOf(e), ok = p.ex?.[i] === true;
+    return `<span class="egap${ok ? ' done' : ''}" data-g="${i}"><b>${m}</b>${ok ? esc(examAnswer(e)) : ''}${e?.stem ? `<i>${esc(e.stem)}</i>` : ''}</span>`;
+  }) : '';
+  return `<li class="exhead"><span class="overline">Cambridge C1 · Reading and Use of English · Part ${part}</span><h3>${P.name} <span class="muted small">· preguntas ${range}</span></h3>
+    <p class="en">${P.en}</p><p class="muted small">${P.es}</p>${t ? `<div class="etext"><b>${esc(t.title)}</b><p>${text}</p></div>` : ''}</li>`;
 }
 
 // ---------- Más práctica: ejercicios nuevos generados con el contenido de la unidad ----------
@@ -162,7 +204,7 @@ function renderPractice(body, id, onlyWrong = false) {
       <p class="muted">Corrige cada ejercicio al momento. Lee siempre la explicación, aunque aciertes.</p>
       <div class="row">${onlyWrong ? '<button id="all">Ver todos</button>' : wrong ? `<button id="wrongonly">Rehacer mis ${wrong} fallos</button>` : ''}<button id="resetex">Empezar de cero</button></div>
     </div>
-    <ol class="exlist">${list.map(({ ex, i }) => `<li class="exitem ${p.ex?.[i] === true ? 'was-ok' : p.ex?.[i] === false ? 'was-bad' : ''}" data-i="${i}">${exStateTag(p.ex?.[i])}${exerciseHtml(ex, i)}</li>`).join('') || '<p class="empty">¡No tienes fallos pendientes!</p>'}</ol>
+    <ol class="exlist">${list.map(({ ex, i }, k) => `${u.exam && ex.part && ex.part !== list[k - 1]?.ex.part ? examPartHead(u, id, ex.part) : ''}<li class="exitem ${p.ex?.[i] === true ? 'was-ok' : p.ex?.[i] === false ? 'was-bad' : ''}" data-i="${i}"${ex.num ? ` data-num="${ex.num}"` : ''}>${exStateTag(p.ex?.[i])}${exerciseHtml(ex, i)}</li>`).join('') || '<p class="empty">¡No tienes fallos pendientes!</p>'}</ol>
     <div id="pracsum"></div>`;
   const drawSum = () => {
     const pr = progress(id), bad = u.exercises.filter((_, i) => pr.ex?.[i] === false).length, todo = u.exercises.filter((_, i) => pr.ex?.[i] === undefined).length;
@@ -176,6 +218,8 @@ function renderPractice(body, id, onlyWrong = false) {
   drawSum();
   body.querySelectorAll('.exitem').forEach(li => bindExercise(li, u.exercises[li.dataset.i], ok => {
     setProgress(id, pr => { (pr.ex ||= {})[li.dataset.i] = ok; });
+    const g = ok && body.querySelector(`.egap[data-g="${li.dataset.i}"]`);
+    if (g && !g.classList.contains('done')) { g.classList.add('done'); g.querySelector('b').insertAdjacentText('afterend', examAnswer(u.exercises[li.dataset.i])); }
     li.classList.toggle('was-ok', ok); li.classList.toggle('was-bad', !ok); li.querySelector('.state')?.remove();
     drawSum();
     const tabsEl = document.querySelector('.tabs a:nth-child(2)'); const st = unitStatus(id);
@@ -240,7 +284,7 @@ function mixOrder(opts, seed) {
 
 function exerciseHtml(ex, i) {
   const fb = '<div class="fb" hidden></div>';
-  if (ex.type === 'mcq') return `<div class="exq">${ex.q}</div><div class="choices">${mixOrder(ex.opts, i).map(j => `<button class="choice" data-j="${j}">${esc(ex.opts[j])}</button>`).join('')}</div>${fb}`;
+  if (ex.type === 'mcq') return `<div class="exq">${ex.q}</div><div class="choices">${mixOrder(ex.opts, i).map((j, n) => `<button class="choice" data-j="${j}">${ex.part ? `<b class="letter">${'ABCD'[n]}</b>` : ''}${esc(ex.opts[j])}</button>`).join('')}</div>${fb}`;
   if (ex.type === 'gap') return `<div class="exq">${ex.q.replace('___', `<input class="gapin" aria-label="Respuesta" autocomplete="off" autocapitalize="off" spellcheck="false">`)}</div><div class="row"><button class="check">Comprobar</button></div>${fb}`;
   if (ex.type === 'order') {
     const shuffled = ex.words.map((w, k) => ({ w, k })).sort((a, b) => ((a.k * 7 + i * 3) % 11) - ((b.k * 7 + i * 3) % 11));

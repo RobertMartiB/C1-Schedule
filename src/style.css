@@ -678,3 +678,20 @@ body.picking nav.main, body.picking #chatbtn, body.picking #coursebtn { display:
 .cflag .flag { display: block; width: 48px; height: 32px; border-radius: 6px; box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 4px 12px -4px rgba(0,0,0,.5); }
 .cflag.small .flag { width: 27px; height: 18px; border-radius: 4px; }
 .cflag.big .flag { width: 84px; height: 56px; border-radius: 10px; margin-bottom: 10px; }
+
+/* Formato del examen Cambridge (Reading and Use of English) */
+.exhead { list-style: none; padding: 18px 4px 2px; }
+.exhead h3 { margin: 4px 0 6px; font-size: 1.05rem; }
+.exhead .en { margin: 0 0 4px; font-weight: 600; }
+.etext { margin-top: 12px; background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--radius); padding: 14px 16px; line-height: 1.9; }
+.etext p { margin: 6px 0 0; }
+.egap { display: inline-flex; align-items: baseline; gap: 4px; min-width: 64px; padding: 0 6px; border-bottom: 2px solid var(--line); }
+.egap b { font-size: .7rem; color: var(--muted); }
+.egap i { font-style: normal; font-size: .72rem; font-weight: 700; color: var(--accent); }
+.egap.done { border-color: var(--ok); font-weight: 600; }
+.exitem[data-num]::before { content: attr(data-num); }
+.stem { color: var(--accent); font-size: .85em; letter-spacing: .02em; }
+.kw { display: table; margin: 10px 0; padding: 3px 10px; border: 1px solid var(--accent); border-radius: 6px; font-weight: 800; letter-spacing: .06em; color: var(--accent); }
+.choice .letter { display: inline-block; width: 1.4em; color: var(--muted); }
+.exhead:not(:first-child) { margin-top: 18px; }
+.kw ~ .gapin { width: min(100%, 300px); }
