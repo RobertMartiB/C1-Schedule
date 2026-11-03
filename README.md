@@ -113,7 +113,7 @@ La lectura se desbloquea al terminar la práctica. Primero lees el texto entero 
 
 ### Libro de gramática y ruta
 
-Toda la teoría de la ruta, ordenada para consultarla, con buscador, tabla de verbos irregulares y una [versión en PDF](https://robertmartib.github.io/Talkiro/libro/Talkiro-Libro-B1.pdf) para imprimir.
+Toda la teoría de la ruta, ordenada para consultarla, con buscador, tabla de verbos irregulares y una [versión en PDF](https://robertmartib.github.io/Talkiro/libro/Talkiro-Libro.pdf) para imprimir.
 
 <table>
   <tr>

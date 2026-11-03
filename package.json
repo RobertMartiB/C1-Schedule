@@ -8,6 +8,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "libro": "electron tools/libro.js",
     "vendor": "cp node_modules/hls.js/dist/hls.min.js src/vendor/ && esbuild tools/anthropic-entry.js --bundle --format=iife --minify --target=es2020 --outfile=src/vendor/anthropic.js",
     "dist:linux": "npm run vendor && electron-builder --linux AppImage deb",
     "dist:win": "npm run vendor && electron-builder --win zip"
