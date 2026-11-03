@@ -695,3 +695,23 @@ body.picking nav.main, body.picking #chatbtn, body.picking #coursebtn { display:
 .choice .letter { display: inline-block; width: 1.4em; color: var(--muted); }
 .exhead:not(:first-child) { margin-top: 18px; }
 .kw ~ .gapin { width: min(100%, 300px); }
+
+/* Ventana de Talkiro Pro */
+dialog#prodlg { width: min(440px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0; border: 1px solid var(--line2); border-radius: 20px; background: var(--card); color: var(--text); }
+dialog#prodlg::backdrop { background: rgba(0, 0, 0, .6); }
+.pro { position: relative; padding: 26px 22px 20px; display: grid; gap: 10px; }
+.pro .close { position: absolute; top: 12px; right: 12px; }
+.pro h2 { margin: 2px 0 0; font-size: 1.25rem; line-height: 1.3; }
+.pro p { margin: 0; }
+.pro-badge { justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: .78rem; font-weight: 800; color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+.pro-badge svg { width: 14px; height: 14px; }
+.pro-list { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 12px; }
+.pro-list li { display: flex; gap: 12px; align-items: flex-start; }
+.pro-list li > svg { flex: none; width: 20px; height: 20px; color: var(--accent); margin-top: 2px; }
+.pro-list b { display: block; }
+.pro-list span { font-size: .88rem; color: var(--muted); }
+.pro-free { display: flex; gap: 8px; align-items: flex-start; font-size: .88rem; padding: 10px 12px; border-radius: 12px; background: var(--ok-soft); }
+.pro-free svg { flex: none; width: 18px; height: 18px; color: var(--ok); }
+.pro .wide { width: 100%; justify-content: center; }
+.pro .ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.pro .center { text-align: center; }

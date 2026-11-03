@@ -615,6 +615,12 @@ function renderCalendar(main) {
 // ---- SERIES (Jellyfin) ----
 let seriesCache = null, moviesCache = null, libraryKind = 'series';
 async function renderSeries(main, arg) {
+  if (Pro.ENFORCED && !Pro.active()) {
+    main.innerHTML = `<h1>Series y películas</h1><div class="gate">${icon('lock')}<h2>Es de Talkiro Pro</h2><p>Aprende con tus propias series y películas, con subtítulos y retos de traducción.</p><button class="primary" id="seepro">${icon('star')}Ver Talkiro Pro</button></div>`;
+    $('#seepro').onclick = () => Pro.dialog('series');
+    return Pro.gate('series');
+  }
+  Pro.gate('series');
   if (!Jellyfin.connected()) {
     main.innerHTML = `
       <h1>Series y películas</h1>
@@ -869,6 +875,8 @@ function renderSettings(main) {
       ${paceFormHtml(PACE)}
       <div class="row"><button class="primary" id="pacesave">Guardar</button></div>
     </div>
+    <h2>Talkiro Pro</h2>
+    ${Pro.settingsHtml()}
     <h2>Chat con Claude</h2>
     ${Chat.settingsHtml()}
     <h2>Retos en series y películas</h2>
@@ -892,6 +900,7 @@ function renderSettings(main) {
       <label class="btn">Importar<input type="file" id="import" accept=".json" hidden></label>
     </div>`;
   Chat.bindSettings();
+  Pro.bindSettings();
   $('#theme').onchange = e => setTheme(e.target.value);
   const getPace = bindPaceForm($('#pacebox'), PACE);
   $('#pacesave').onclick = () => { CourseStore.setPace(ACTIVE_COURSE.id, getPace()); location.hash = 'hoy'; location.reload(); };

@@ -30,7 +30,8 @@ const Chat = (() => {
 
   function el() { return $('#chatpanel'); }
 
-  function open() {
+  function open() { Pro.gate('ai', show); }
+  function show() {
     let p = el();
     if (!p) {
       p = document.createElement('div');
