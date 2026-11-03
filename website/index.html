@@ -18,20 +18,124 @@
   <meta name="twitter:title" content="Talkiro · Aprende idiomas estudiando desde casa">
   <meta name="twitter:image" content="https://robertmartib.github.io/Talkiro/img/p-hoy.jpg">
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@graph": [
-      { "@type": "WebSite", "name": "Talkiro", "url": "https://robertmartib.github.io/Talkiro/", "inLanguage": "es" },
-      { "@type": "SoftwareApplication", "name": "Talkiro", "url": "https://robertmartib.github.io/Talkiro/",
-        "description": "App gratuita para aprender idiomas a tu ritmo, con inglés de B1 a C1 Advanced y ejercicios en formato Cambridge.",
-        "applicationCategory": "EducationalApplication", "operatingSystem": "Android, Windows, Linux, Web",
-        "image": "https://robertmartib.github.io/Talkiro/icon.png", "author": { "@type": "Person", "name": "Robert Martí" },
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" } }
-    ]
-  }
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "name": "Talkiro",
+      "url": "https://robertmartib.github.io/Talkiro/",
+      "inLanguage": "es"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "Talkiro",
+      "url": "https://robertmartib.github.io/Talkiro/",
+      "description": "App gratuita para aprender idiomas a tu ritmo, con inglés de B1 a C1 Advanced y ejercicios en formato Cambridge.",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Android, Windows, Linux, Web",
+      "image": "https://robertmartib.github.io/Talkiro/icon.png",
+      "author": {
+        "@type": "Person",
+        "name": "Robert Martí"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "¿Cómo instalo el APK en mi Android?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Abre esta web en el móvil y pulsa Descargar APK.Abre el archivo desde la notificación de descarga.Android te pedirá permiso para instalar apps de esta fuente (Chrome o Archivos): actívalo y vuelve atrás.Pulsa Instalar. Si sale Play Protect, toca Más detalles → Instalar de todas formas: sale porque la app no viene de Google Play."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Y en iPhone?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Abre la versión web en Safari, pulsa Compartir y luego Añadir a pantalla de inicio. Funciona como una app y sin conexión."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cómo paso mi progreso del ordenador al móvil?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Si tienes Jellyfin, entra con el mismo usuario en la pestaña Series de los dos dispositivos y se sincroniza solo. Si no, en ⚙ Ajustes exporta tu progreso en uno e impórtalo en el otro."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Qué idiomas hay?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Diez: inglés (de B1 a C1), francés, alemán, italiano y portugués (de cero a B1), japonés (hasta el JLPT N5), chino (hasta el HSK 2), coreano (hasta el TOPIK I), ruso y árabe (hasta el A2). Cada curso tiene su propio plan y su progreso. Las unidades se van publicando poco a poco: el inglés es el más avanzado."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Qué es el chat de la esquina?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Un chat pequeño con Claude para preguntar dudas de gramática y pedir traducciones sin salir de la app. Usa tu propia clave de API de Anthropic: cada pregunta cuesta muy poco, pero no es gratis."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Hay libro de gramática?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sí, propio y gratis: toda la teoría de la ruta está en la sección Libro de la app, y también en PDF para imprimir (B1+ y B2 con ejercicios en formato Cambridge; el C1 se irá añadiendo)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Es gratis de verdad?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sí. Ni cuentas, ni anuncios, ni suscripciones."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cómo instalo el .deb desde la terminal?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "sudo apt install ./Talkiro-2.7.0-linux-amd64.deb"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Windows dice \"Windows protegió tu PC\"",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sale porque la app no está firmada (firmarla cuesta dinero). Pulsa Más información → Ejecutar de todas formas."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Necesito Jellyfin?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Todo funciona sin él. Solo hace falta para ver series dentro de la app y para sincronizar el progreso entre dispositivos."
+          }
+        }
+      ]
+    }
+  ]
+}
   </script>
   <meta name="theme-color" content="#0b0d14">
-  <link rel="icon" href="icon.png">
+  <link rel="icon" href="icon.png" sizes="512x512" type="image/png">
+  <link rel="apple-touch-icon" href="icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
