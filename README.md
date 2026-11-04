@@ -171,8 +171,8 @@ Todo está en la [web de descargas](https://robertmartib.github.io/Talkiro/) y e
 
 | Plataforma | Archivo | Cómo |
 |---|---|---|
-| **Android** 6 o superior | `Talkiro-X.Y.Z-android.apk` | Descárgalo en el móvil, ábrelo y permite instalar apps de esa fuente. |
-| **Linux** (Ubuntu, Debian, Mint) | `Talkiro-X.Y.Z-linux-amd64.deb` | Doble clic, o `sudo apt install ./Talkiro-X.Y.Z-linux-amd64.deb`. |
+| **Android** 6 o superior | `Talkiro-X.Y.Z-android.apk` (`X.Y.Z` es la versión) | Descárgalo en el móvil, ábrelo y permite instalar apps de esa fuente. |
+| **Linux** (Ubuntu, Debian, Mint) | `Talkiro-X.Y.Z-linux-amd64.deb` | Doble clic, o en la terminal (cambiando `X.Y.Z` por la versión, por ejemplo `2.7.0`): `sudo apt install ./Talkiro-2.7.0-linux-amd64.deb` |
 | **Linux** (otras distros) | `Talkiro-X.Y.Z-linux-x86_64.AppImage` | Dale permiso de ejecución y ábrelo. |
 | **Windows** 10 y 11 | `Talkiro-X.Y.Z-win-x64.zip` | Descomprime y abre `Talkiro.exe`. |
 | **Navegador / iPhone** | — | Abre la [versión web](https://robertmartib.github.io/Talkiro/app/) y añádela a la pantalla de inicio. |
