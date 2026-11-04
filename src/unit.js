@@ -283,8 +283,13 @@ function findHints(parts, selected, target) {
   }
   const want = toks.map((t, k) => (t.role === target ? k : -1)).filter(k => k >= 0);
   const missing = want.filter(k => !selected.has(k));
-  if (missing.length && missing.length < want.length) msgs.push(`Te ha faltado una parte: <b>«${esc(want.map(k => toks[k].w).join(' ').replace(/[.,]$/, ''))}»</b> va entero (el auxiliar forma un bloque con el verbo).`);
-  else if (missing.length && !selected.size) msgs.push(`No has marcado nada. La respuesta es <b>«${esc(want.map(k => toks[k].w).join(' ').replace(/[.,]$/, ''))}»</b>.`);
+  // La respuesta siempre arriba: qué era, y si ya habías acertado una parte
+  const ans = parts.filter(p => p[0] === target).map(p => `«${esc(p[1].replace(/[.,;:]$/, ''))}»`).join(' y ');
+  const what = ROLE[target].name.toLowerCase();
+  const extra = [...selected].some(k => toks[k].role !== target);
+  if (!missing.length && extra) msgs.unshift(`<b>${ans}</b> sí es el ${what}: eso lo tenías bien. Lo que sobra:`);
+  else if (missing.length && missing.length < want.length) msgs.unshift(`La respuesta es <b>${ans}</b>. Te ha faltado una parte: va entero (el auxiliar forma un bloque con el verbo).`);
+  else msgs.unshift(`La respuesta es <b>${ans}</b>.${selected.size ? '' : ' No habías marcado nada.'}`);
   return msgs;
 }
 
@@ -354,7 +359,7 @@ function bindExercise(li, ex, onResult) {
       const sel = new Set([...li.querySelectorAll('.tok.sel')].map(t => Number(t.dataset.k)));
       const want = new Set(toks.map((t, k) => (t.role === ex.role ? k : -1)).filter(k => k >= 0));
       const ok = sel.size === want.size && [...want].every(k => sel.has(k));
-      li.querySelectorAll('.tok').forEach(t => { t.disabled = true; t.classList.add(ROLE[toks[t.dataset.k].role].cls); });
+      li.querySelectorAll('.tok').forEach(t => { t.disabled = true; t.classList.add(ROLE[toks[t.dataset.k].role].cls); if (t.classList.contains('sel')) t.classList.replace('sel', 'picked'); });
       const hints = ok ? [] : findHints(ex.parts, sel, ex.role);
       show(ok, ok ? '' : `<ul class="hints">${hints.map(h => `<li>${h}</li>`).join('')}</ul>`);
     };
@@ -427,7 +432,7 @@ function drawBreakdown(box, id, k) {
     </div>`;
   const reveal = () => {
     $('#bdsol').hidden = false;
-    box.querySelectorAll('.tok').forEach(t => { t.disabled = true; t.classList.add(ROLE[toks[t.dataset.n].role].cls); });
+    box.querySelectorAll('.tok').forEach(t => { t.disabled = true; t.classList.add(ROLE[toks[t.dataset.n].role].cls); if (t.classList.contains('sel')) t.classList.replace('sel', 'picked'); });
     setProgress(id, p => { (p.sent ||= {})[k] = true; });
     document.querySelector(`.sent[data-k="${k}"]`)?.classList.add('sdone');
   };

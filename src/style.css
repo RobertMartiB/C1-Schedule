@@ -750,3 +750,6 @@ dialog#prodlg::backdrop { background: rgba(0, 0, 0, .6); }
 .wscores span { font-size: .8rem; color: var(--muted); }
 .wscores .total { border-color: var(--accent); }
 .wfb .wtext { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; line-height: 1.65; }
+
+/* Palabras que marcaste: mantienen el color de su papel y llevan un borde doble */
+.tok.picked { outline: 2px solid currentColor; outline-offset: 2px; font-weight: 800; }
