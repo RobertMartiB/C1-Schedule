@@ -101,42 +101,62 @@ function shuffle(arr, r) { const a = [...arr]; for (let i = a.length - 1; i > 0;
 const cleanW = w => w.replace(/[.,;:!?"“”()]/g, '');
 
 function genExtra(id, seed, count = 10) {
-  const u = UNITS[id], r = rng(seed), p = progress(id), out = [];
+  const u = UNITS[id], r = rng(seed), p = progress(id);
   const sents = u.reading?.sentences || [];
   const vocab = [];
   for (const s of sents) for (const [w, es] of s.vocab || []) if (!vocab.some(v => v.w === w)) vocab.push({ w, es, s });
-  // 1) Ejercicios de la unidad que fallaste alguna vez (con las opciones en otro orden)
-  u.exercises.forEach((ex, i) => {
-    if (p.ex?.[i] !== false && !(p.exMiss || {})[i]) return;
-    if (ex.type === 'mcq') { const order = shuffle(ex.opts.map((_, j) => j), r); out.push({ ...ex, opts: order.map(j => ex.opts[j]), a: order.indexOf(ex.a), from: 'fallo' }); }
-    else out.push({ ...ex, from: 'fallo' });
-  });
-  const pool = [];
-  // 2) Encontrar el verbo principal en frases de la lectura
-  for (const s of sents) if (s.parts.some(x => x[0] === 'V') && s.parts.length > 2) pool.push({ type: 'find', role: 'V', prompt: 'Toca el verbo principal.', parts: s.parts, why: s.note });
-  // 3) Ordenar frases de la lectura (las de longitud manejable)
+  // Vocabulario de todas las unidades del curso, para que las opciones falsas se parezcan a la buena
+  const bank = [];
+  for (const uid in UNITS) for (const s of UNITS[uid].reading?.sentences || []) for (const [w, es] of s.vocab || []) if (!bank.some(v => v.w === w)) bank.push({ w, es });
+  const nWords = t => t.trim().split(/\s+/).length;
+  const similar = (v, key) => {
+    const ref = v[key], n = nWords(ref);
+    const cands = bank.filter(x => x.w !== v.w && x.es !== v.es && x[key] !== ref && nWords(x[key]) === n);
+    // Primero las de longitud parecida; si no hay bastantes, cualquiera con el mismo número de palabras
+    const close = shuffle(cands.filter(x => Math.abs(x[key].length - ref.length) <= 3), r);
+    const rest = shuffle(cands.filter(x => !close.includes(x)), r);
+    return [...close, ...rest].slice(0, 3);
+  };
+  const shuffleOpts = ex => { const order = shuffle(ex.opts.map((_, j) => j), r); return { ...ex, opts: order.map(j => ex.opts[j]), a: order.indexOf(ex.a) }; };
+  const classic = u.exercises.map((ex, i) => ({ ex, i })).filter(({ ex }) => !ex.part);
+
+  // 1) Lo que fallaste alguna vez en la práctica (máximo la mitad de la tanda)
+  const failed = classic.filter(({ i }) => p.ex?.[i] === false || (p.exMiss || {})[i]).map(({ ex }) => ({ ...(ex.type === 'mcq' ? shuffleOpts(ex) : ex), from: 'fallo' }));
+  // 2) Gramática: ejercicios de la unidad, encontrar el verbo y ordenar frases de la lectura
+  const grammar = [];
+  for (const { ex, i } of classic) if (!failed.some(f => f.q === ex.q && f.prompt === ex.prompt)) grammar.push(ex.type === 'mcq' ? shuffleOpts(ex) : { ...ex });
+  for (const s of sents) if (s.parts.some(x => x[0] === 'V') && s.parts.length > 2) grammar.push({ type: 'find', role: 'V', prompt: 'Toca el verbo principal.', parts: s.parts, why: s.note });
   for (const s of sents) {
     const words = sentenceText(s).split(/\s+/).filter(Boolean);
-    if (words.length >= 4 && words.length <= 12) pool.push({ type: 'order', prompt: `Ordena la frase: «${s.es}»`, words, a: words.join(' '), why: s.note });
+    if (words.length >= 5 && words.length <= 12) grammar.push({ type: 'order', prompt: `Ordena la frase: «${s.es}»`, words, a: words.join(' '), why: s.note });
   }
-  // 4) Vocabulario en las dos direcciones
-  for (const v of vocab) {
-    const others = shuffle(vocab.filter(x => x.w !== v.w), r).slice(0, 3);
+  // 3) Vocabulario: cada palabra una sola vez y con un solo tipo de ejercicio
+  const vocabEx = [];
+  for (const v of shuffle(vocab, r)) {
+    const w = v.w.split(' (')[0], txt = sentenceText(v.s), re = new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    const kinds = ['es', 'en'];
+    if (/^[A-Za-z'-]{3,}$/.test(w) && re.test(txt)) kinds.push('gap', 'gap');
+    const kind = kinds[Math.floor(r() * kinds.length)];
+    if (kind === 'gap') {
+      const hint = `${w[0]}${' _'.repeat(w.length - 1)}`;
+      vocabEx.push({ type: 'gap', q: esc(txt.replace(re, '___')) + ` <span class="muted small">(pista: ${esc(hint)} · ${w.length} letras)</span>`, a: [w.toLowerCase()], why: `«${w}» = ${v.es}.`, word: v.w });
+      continue;
+    }
+    const key = kind === 'es' ? 'es' : 'w', others = similar(v, key);
     if (others.length < 3) continue;
-    const o1 = shuffle([v, ...others], r);
-    pool.push({ type: 'mcq', q: `¿Qué significa <b>«${esc(v.w)}»</b>?`, opts: o1.map(x => x.es), a: o1.indexOf(v), why: `«${v.w}» = ${v.es}. Aparece en: «${sentenceText(v.s)}»` });
-    const o2 = shuffle([v, ...others], r);
-    pool.push({ type: 'mcq', q: `¿Cómo se dice <b>«${esc(v.es)}»</b>?`, opts: o2.map(x => x.w), a: o2.indexOf(v), why: `${v.es} = «${v.w}».` });
+    const opts = shuffle([v, ...others], r);
+    vocabEx.push(kind === 'es'
+      ? { type: 'mcq', q: `¿Qué significa <b>«${esc(v.w)}»</b> en esta frase?<br><i>${esc(txt)}</i>`, opts: opts.map(x => x.es), a: opts.indexOf(v), why: `«${v.w}» = ${v.es}.`, word: v.w }
+      : { type: 'mcq', q: `¿Cómo se dice <b>«${esc(v.es)}»</b>?`, opts: opts.map(x => x.w), a: opts.indexOf(v), why: `${v.es} = «${v.w}».`, word: v.w });
   }
-  // 5) Completar una frase de la lectura con su palabra (solo palabras sueltas escritas en alfabeto latino)
-  for (const v of vocab) {
-    const w = v.w.split(' (')[0];
-    if (!/^[A-Za-z'-]+$/.test(w)) continue;
-    const txt = sentenceText(v.s), re = new RegExp(`\\b${w}\\b`, 'i');
-    if (!re.test(txt)) continue;
-    pool.push({ type: 'gap', q: esc(txt.replace(re, '___')) + ` <span class="muted small">(${esc(v.es)})</span>`, a: [w.toLowerCase()], why: `La palabra es «${w}»: ${v.es}.` });
-  }
-  return [...out.slice(0, Math.ceil(count / 2)), ...shuffle(pool, r)].slice(0, count);
+
+  // Montar la tanda: fallos (como mucho la mitad), luego al menos la mitad de gramática y el resto vocabulario
+  const out = shuffle(failed, r).slice(0, Math.floor(count / 2));
+  const g = shuffle(grammar, r), vv = vocabEx;
+  const needG = Math.max(0, Math.ceil(count / 2) - out.length);
+  out.push(...g.splice(0, needG));
+  while (out.length < count && (vv.length || g.length)) out.push(vv.length && (out.length % 2 || !g.length) ? vv.shift() : g.shift());
+  return shuffle(out, r).slice(0, count);
 }
 
 function renderExtra(body, id, seed = Date.now()) {
