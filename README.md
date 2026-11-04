@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://robertmartib.github.io/Talkiro"><b>Web y descargas</b></a> ·
+  <a href="https://robertmartib.github.io/Talkiro/"><b>Web y descargas</b></a> ·
   <a href="https://robertmartib.github.io/Talkiro/app/"><b>Usarla en el navegador</b></a> ·
   <a href="https://github.com/RobertMartiB/Talkiro/releases/latest"><b>Última versión</b></a>
 </p>
@@ -167,7 +167,7 @@ La misma app en Android, con la barra de navegación abajo.
 
 ## Instalar
 
-Todo está en la [web de descargas](https://robertmartib.github.io/Talkiro) y en la [última versión](https://github.com/RobertMartiB/Talkiro/releases/latest).
+Todo está en la [web de descargas](https://robertmartib.github.io/Talkiro/) y en la [última versión](https://github.com/RobertMartiB/Talkiro/releases/latest).
 
 | Plataforma | Archivo | Cómo |
 |---|---|---|
