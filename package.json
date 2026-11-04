@@ -1,7 +1,7 @@
 {
   "name": "c1-tracker",
   "productName": "Talkiro",
-  "version": "2.7.2",
+  "version": "2.7.3",
   "description": "Tu plan de estudio para el Cambridge C1 Advanced, con calendario, materiales y Jellyfin.",
   "author": "Robert Martí",
   "license": "MIT",

@@ -50,6 +50,8 @@ const Vocab = (() => {
         <input id="nex" placeholder="Frase de ejemplo (opcional)" autocomplete="off">
         <button class="primary" type="submit">Añadir</button>
       </form>
+      <p class="row small muted" style="margin-top:10px">¿Tienes una lista de palabras en un archivo (por ejemplo, la que te prepara Claude)?
+        <label class="btn small">${icon('download')}Importar tarjetas<input type="file" id="impfile" accept=".json,application/json" hidden></label></p>
       <h2>Tus tarjetas (${all.length})</h2>
       ${all.length ? `<ul class="cardlist">${all.map(c => `<li><b>${esc(c.w)}</b><span>${esc(c.es)}</span><span class="box" title="Caja ${c.box}">${'●'.repeat(c.box)}${'○'.repeat(INTERVALS.length - 1 - c.box)}</span><button class="icon small" data-del="${c.id}" aria-label="Borrar ${esc(c.w)}">${icon('x')}</button></li>`).join('')}</ul>`
         : '<p class="empty">Aún no tienes tarjetas. Añádelas desde las lecturas con el botón <b>+ tarjeta</b> o con el formulario.</p>'}`;
@@ -60,6 +62,17 @@ const Vocab = (() => {
       else toast('Esa palabra ya está en tus tarjetas.');
     };
     main.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { remove(b.dataset.del); render(main); });
+    // Importar una lista de tarjetas: [{ w, es, ex }] o { cards: [...] }. Las que ya tienes no se duplican.
+    $('#impfile').onchange = async e => {
+      try {
+        const data = JSON.parse(await e.target.files[0].text());
+        const list = Array.isArray(data) ? data : data.cards || [];
+        let n = 0;
+        for (const c of list) if (c && add(String(c.w || ''), String(c.es || ''), String(c.ex || ''))) n++;
+        toast(n ? `${n} tarjeta${n > 1 ? 's' : ''} añadida${n > 1 ? 's' : ''}` : 'No había tarjetas nuevas en ese archivo.');
+        render(main);
+      } catch { toast('Ese archivo no es una lista de tarjetas válida.'); }
+    };
   }
 
   function drawReview(queue) {
